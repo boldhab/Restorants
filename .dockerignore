@@ -1,0 +1,9 @@
+.git
+**/node_modules
+**/.next
+**/dist
+**/.env*
+**/test-results
+**/playwright-report
+zayqora
+**/.next-e2e

@@ -1,0 +1,21 @@
+{
+  "name": "@zayqora/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./enums": "./dist/enums/index.js",
+    "./schemas": "./dist/schemas/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "types": "./dist/index.d.ts"
+}

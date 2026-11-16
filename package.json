@@ -1,0 +1,54 @@
+{
+  "name": "zayqora",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"web,api\" -c \"cyan,green\" \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "npm run dev --workspace=@zayqora/web",
+    "dev:api": "npm run dev --workspace=@zayqora/api",
+    "build": "npm run build --workspace=@zayqora/contracts --if-present && npm run build --workspace=@zayqora/api --if-present && npm run build --workspace=@zayqora/web",
+    "build:web": "npm run build --workspace=@zayqora/web",
+    "build:api": "npm run build --workspace=@zayqora/api --if-present",
+    "lint": "eslint . && npm run typecheck",
+    "test": "npm run test:api && npm run test:e2e",
+    "test:api": "npm run test --workspace=@zayqora/api",
+    "test:unit": "npm run test:unit --workspace=@zayqora/api",
+    "test:integration": "npm run test:integration --workspace=@zayqora/api",
+    "test:e2e": "playwright test",
+    "db:migrate": "npm run migrate --workspace=@zayqora/api",
+    "db:seed": "npm run seed --workspace=@zayqora/api",
+    "setup:dev": "npm run build -w @zayqora/contracts && tsx scripts/setup-dev.ts",
+    "typecheck": "tsc -p packages/contracts && tsc -p apps/api --noEmit && npm run typecheck -w @zayqora/web",
+    "predev": "npm run build --workspace=@zayqora/contracts",
+    "pretest:api": "npm run build --workspace=@zayqora/contracts",
+    "pretest:unit": "npm run build -w @zayqora/contracts",
+    "pretest:integration": "npm run build -w @zayqora/contracts",
+    "predb:seed": "npm run build -w @zayqora/contracts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/supertest": "^7.2.1",
+    "concurrently": "^9.1.0",
+    "eslint": "^9.39.5",
+    "prettier": "^3.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  }
+}

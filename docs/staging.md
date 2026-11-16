@@ -1,0 +1,22 @@
+# Staging release and operations
+
+No staging deployment is claimed. A designated host, PostgreSQL connection, SMTP account, HTTPS domain/certificate and deployment credentials must be supplied by the operator. No infrastructure is purchased or provisioned.
+
+Build from the repository root. `apps/api/Dockerfile` compiles the shared contracts and API; `apps/web/Dockerfile` builds Next.js with the internal API address. The images run as the unprivileged `node` user. Staging compose is a template for an existing host and managed PostgreSQL; secrets are in ignored `apps/api/.env.staging` or the hosting secret manager.
+
+1. Create an isolated staging database and least-privilege runtime account. Use a separate migration account with schema privileges. Require TLS with certificate verification (`PGSSL=true`); install the service CA through `NODE_EXTRA_CA_CERTS` if needed.
+2. Configure production environment per `environment.md`: explicit DATABASE_URL, long random secrets, COOKIE_SECURE=true, public HTTPS APP_URL, matching ALLOWED_ORIGINS, SMTP delivery, and exact TRUST_PROXY_HOPS. With an external ingress and Next rewrite there may be two proxies; verify actual forwarded headers and ensure the API is unreachable publicly before trusting them.
+3. Take and verify a backup. Build images: `docker compose -f infrastructure/compose.staging.yml build`.
+4. Run migrations as a controlled, single release job: `docker compose -f infrastructure/compose.staging.yml run --rm api npm run db:migrate`. Do not run demo seeds. Required permissions/roles are included in migration 002.
+5. Start services: `docker compose -f infrastructure/compose.staging.yml up -d`. Terminate HTTPS at the designated ingress and route all paths to web port 3000. Keep API private. Rebuild web if its API_PROXY_URL changes.
+6. Check `/api/v1/health` (liveness) and `/api/v1/ready` (PostgreSQL readiness), then run an actual register/verify/login/onboarding/settings/logout smoke journey against staging using its real SMTP inbox. Confirm Secure/HttpOnly/SameSite cookies over HTTPS. Confirm `/api/v1/dev/emails` returns 404.
+
+node-pg-migrate tracks applied SQL in `phase1_migrations`, uses a migration lock and transaction handling, and safely skips already applied files. Existing legacy `schema_migrations` is retained for compatibility; migration 001 is idempotent and migration 002 records the upgraded foundation. Never edit applied migrations. Add a new numbered forward migration. SQL migrations intentionally have no destructive automated down operation. A failed transactional migration rolls back; inspect logs/database state before retrying. Do not manually mark a failed migration as successful.
+
+Rollback: revert to a known image only while schema compatibility holds. Prefer a corrective forward migration over dropping columns/tables. For an incompatible schema change, stop writers and restore a tested backup into a replacement database before switching the connection. Never restore blindly over the live database.
+
+Backups: use the database provider's encrypted snapshots/PITR. For a manual logical copy: `pg_dump --format=custom --file=zayqora.dump "$DATABASE_URL"` with credentials supplied securely by the environment. Store backups encrypted outside the repository, with access and retention controls. Rehearse `pg_restore --no-owner --dbname="$RESTORE_DATABASE_URL" zayqora.dump` into an isolated empty database and validate record counts and a smoke journey before an incident.
+
+Collect structured stdout logs by request ID. Alert on readiness failures, elevated 5xx/429 rates, SMTP delivery errors, pool saturation and disk/connection limits. Logs omit token-bearing query strings and body contents. Audit data is stored in PostgreSQL; define retention and access policy before production rollout. Authentication rate limits are process-local for this single-process foundation: use one API replica or shared ingress limits before horizontal scaling. Session/idempotency/token cleanup jobs and durable email retries are future operational improvements; expiration checks remain authoritative even before cleanup.
+
+The development Compose file binds PostgreSQL/Mailpit only to loopback. Its database initialization SQL runs on a fresh volume; existing volumes need the test database created separately. Do not remove volumes to repair migrations without first preserving valuable data.
