@@ -4,6 +4,10 @@ services:
       context: ..
       dockerfile: apps/api/Dockerfile
     env_file: ../apps/api/.env.staging
+    environment:
+      MEDIA_STORAGE: ${MEDIA_STORAGE:-local}
+      MEDIA_LOCAL_ROOT: /var/lib/zayqora-media
+    volumes: ['restaurant-media:/var/lib/zayqora-media']
     restart: unless-stopped
     expose: ['4000']
     healthcheck:
@@ -18,7 +22,13 @@ services:
       args:
         API_PROXY_URL: http://api:4000
     restart: unless-stopped
+    environment:
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-https://configure-staging-origin.invalid}
+      API_PROXY_URL: http://api:4000
     ports: ['127.0.0.1:3000:3000']
     depends_on:
       api:
         condition: service_healthy
+
+volumes:
+  restaurant-media:
