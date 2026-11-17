@@ -1,3 +1,4 @@
+import { publishingRouter, publicWebsiteRouter } from '../modules/publishing/publishing.routes.js';
 import { env } from '../config/env.js';
 import { emailService } from '../integrations/email/email-service.js';
 import { generalLimiter } from '../middleware/rate-limit.js';
@@ -13,7 +14,21 @@ apiRouter.use('/', healthRouter);
 
 // Mount business feature routers
 apiRouter.use('/auth', generalLimiter, authRouter);
+apiRouter.use('/restaurants/:restaurantId', (req, res, next) => {
+  if (/^\/(website|menu|media|settings)(\/|$)/.test(req.path))
+    return publishingRouter(req, res, next);
+  next();
+});
 apiRouter.use('/restaurants', generalLimiter, restaurantsRouter);
+apiRouter.use('/public/restaurants', generalLimiter, publicWebsiteRouter);
+apiRouter.get('/public/website-index', generalLimiter, async (_req, res, next) => {
+  try {
+    const { websiteIndex } = await import('../modules/publishing/publishing.service.js');
+    res.json(await websiteIndex());
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Explicit local-only capture; never registered with a production environment.
 if (!env.IS_PROD && env.EMAIL_PROVIDER === 'memory') {

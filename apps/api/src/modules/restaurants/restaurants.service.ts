@@ -160,7 +160,24 @@ export class RestaurantsService {
     const { userId, requestId, ipAddress } = context;
 
     const updated = await withTransaction(async (client) => {
+      await client.query('SELECT id FROM restaurants WHERE id=$1 FOR UPDATE', [
+        tenant.restaurantId,
+      ]);
       const rest = await restaurantsRepository.updateRestaurant(tenant, updateData, client);
+      const draftRow = (
+        await client.query('SELECT content FROM website_drafts WHERE restaurant_id=$1', [
+          tenant.restaurantId,
+        ])
+      ).rows[0];
+      if (draftRow) {
+        for (const [key, value] of Object.entries(updateData)) {
+          if (key in draftRow.content.settings) draftRow.content.settings[key] = value;
+        }
+        await client.query(
+          'UPDATE website_drafts SET content=$2,version=version+1,updated_at=now() WHERE restaurant_id=$1',
+          [tenant.restaurantId, draftRow.content]
+        );
+      }
 
       await authRepository.createAuditLog(
         {
