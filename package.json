@@ -27,7 +27,9 @@
     "pretest:api": "npm run build --workspace=@zayqora/contracts",
     "pretest:unit": "npm run build -w @zayqora/contracts",
     "pretest:integration": "npm run build -w @zayqora/contracts",
-    "predb:seed": "npm run build -w @zayqora/contracts"
+    "predb:seed": "npm run build -w @zayqora/contracts",
+    "db:seed:phase2": "npm run build -w @zayqora/contracts && node --import tsx apps/api/scripts/seed-phase2.ts",
+    "media:cleanup": "node --import tsx apps/api/scripts/cleanup-media.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",

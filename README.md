@@ -1,6 +1,6 @@
 # ZAYQORA
 
-Phase 1 of a multi-restaurant SaaS: identity, verified accounts, PostgreSQL sessions, transactional onboarding, tenant permissions, and a responsive workspace. Application code, shared contracts, scripts, and tests use TypeScript. The API remains an Express modular monolith; Next.js uses the App Router and Tailwind.
+A multi-restaurant SaaS with Phase 2 restaurant profiles, images, menus, private previews and published restaurant websites, built on identity, verified accounts, PostgreSQL sessions, transactional onboarding, tenant permissions, and a responsive workspace. Application code, shared contracts, scripts, and tests use TypeScript. The API remains an Express modular monolith; Next.js uses the App Router and Tailwind.
 
 Use Node.js 24 LTS and npm. One root lockfile resolves the workspace dependencies.
 
@@ -49,3 +49,9 @@ npm run test:e2e
 Set `TEST_DATABASE_URL` to override the test connection. Test fixtures truncate ONLY that test database and recreate RBAC. Browser test accounts have unique addresses and do not truncate development data.
 
 Documentation: [environment](docs/environment.md), [architecture and security](docs/architecture.md), [API contract](docs/openapi.json), [staging and recovery](docs/staging.md), [verification results](docs/phase-1-verification.md).
+
+Phase 2: [setup, publishing rules, storage, API, caching and release boundaries](docs/phase-2.md). After the optional development seed, run `npm run db:seed:phase2` for two distinct unpublished demonstration menus. Open **Menu & website** in a restaurant workspace. Public routes start at `/r/{slug}` after publishing.
+
+Local abandoned-object cleanup: `npm run media:cleanup` is a dry run; add `-- --apply` to remove only untracked objects older than seven days. Referenced draft and historical images are retained.
+
+Phase 2 execution evidence and per-step status: [verification report](docs/phase-2-verification.md).

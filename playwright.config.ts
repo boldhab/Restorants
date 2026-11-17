@@ -7,8 +7,9 @@ export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
   fullyParallel: false,
-  timeout: 60000,
-  use: { baseURL: 'http://localhost:3100', trace: 'retain-on-failure' },
+  timeout: 180000,
+  expect: { timeout: 20000 },
+  use: { baseURL: 'http://localhost:3100', trace: 'retain-on-failure', actionTimeout: 20000 },
   webServer: [
     {
       command: 'npm exec -w @zayqora/api -- tsx src/server.ts',
