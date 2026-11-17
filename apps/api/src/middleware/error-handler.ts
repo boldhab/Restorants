@@ -36,6 +36,12 @@ export function errorHandler(
     });
   }
 
+  if (err instanceof URIError)
+    err = new AppError('Invalid encoded image description', 400, 'VALIDATION_ERROR');
+  if (err.name === 'ZodError')
+    err = new AppError('Invalid resource identifier', 400, 'VALIDATION_ERROR');
+  if (err.code === '23514')
+    err = new AppError('Currency cannot change after menu prices exist', 409, 'CONFLICT');
   if (err.code === '23505')
     err = new AppError('A record with these details already exists', 409, 'CONFLICT');
   if (err.code === '22P02')
