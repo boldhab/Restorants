@@ -91,6 +91,7 @@ export function Workspace({
               ⚙ &nbsp; Restaurant settings
             </Link>
           )}
+          <Link href={`/workspace/${restaurantId}/website`}>✧ &nbsp; Menu & website</Link>
           <Link href="/restaurants">↔ &nbsp; All restaurants</Link>
         </nav>
         <div className="sidebar-bottom">
@@ -213,13 +214,13 @@ export function Workspace({
               <section className="coming-next">
                 <span>✧</span>
                 <div>
-                  <h3>The foundation comes first.</h3>
+                  <h3>Bring your restaurant online.</h3>
                   <p>
-                    Menus, orders, and operations arrive in later phases. Your public website has
-                    not been published.
+                    Build your menu, preview your restaurant website, and publish when you are
+                    ready.
                   </p>
                 </div>
-                <span className="tag">COMING LATER</span>
+                <Link href={`/workspace/${restaurantId}/website`}>Set up menu & website →</Link>
               </section>
             </>
           )}
