@@ -1,8 +1,10 @@
 'use client';
+import { commerce } from '../../lib/commerce-client';
 import { useEffect, useRef, useState } from 'react';
 import { configurationPrice, formatMoney, isOpen, type Draft, type Item } from '@zayqora/contracts';
 import { api } from '../../lib/api-client';
 export type SiteData = {
+  commerce?: { restaurantId: string; ordering: boolean; reservations: boolean };
   draft: Draft;
   revision?: string;
   open?: boolean;
@@ -270,6 +272,12 @@ export function RestaurantSite({
           {s.name}
         </a>
         <nav aria-label="Restaurant navigation">
+          {!restaurantId && live.commerce?.ordering && (
+            <a href={`/shop/${live.commerce.restaurantId}/cart`}>Pickup cart</a>
+          )}
+          {!restaurantId && live.commerce?.reservations && (
+            <a href={`/shop/${live.commerce.restaurantId}/reservations`}>Reserve a visit</a>
+          )}
           <a href={restaurantId ? '#menu' : `${base}/menu`}>Menu</a>
           {enabled('about') && t.story && (
             <a href={restaurantId ? '#about' : `${base}/about`}>Our story</a>
@@ -305,7 +313,7 @@ export function RestaurantSite({
         <p>{s.description}</p>
         <p>{s.serviceModes.map((m) => m.replace('_', ' ')).join(' · ')}</p>
         {t.policy && <p>{t.policy}</p>}
-        <small>Powered by ZAYQORA · Menu browsing only</small>
+        <small>Powered by ZAYQORA</small>
       </footer>
       <dialog
         ref={dialog}
@@ -420,9 +428,39 @@ export function RestaurantSite({
             >
               Validate menu pricing
             </button>
+            {!restaurantId && live.commerce?.ordering && (
+              <button
+                onClick={async () => {
+                  try {
+                    configurationPrice(selected, variant || undefined, options);
+                    const id = live.commerce!.restaurantId;
+                    const cart = await commerce<{ version: number }>(id, '/cart');
+                    await commerce(id, '/cart', {
+                      method: 'PATCH',
+                      body: JSON.stringify({
+                        version: cart.version,
+                        line: {
+                          itemId: selected.id,
+                          variantId: variant || undefined,
+                          options,
+                          quantity: 1,
+                        },
+                      }),
+                    });
+                    setResult('Added to your pickup cart.');
+                  } catch (e) {
+                    setResult((e as Error).message);
+                  }
+                }}
+              >
+                Add to pickup cart
+              </button>
+            )}
             <p role="status">{result}</p>
             <p className="fine-print">
-              Menu pricing only. Ordering, checkout and reservations are not available here.
+              {live.commerce?.ordering
+                ? 'Pickup orders require checkout confirmation. Pay at pickup when offered.'
+                : 'Menu pricing only. Online ordering is not enabled for this restaurant.'}
             </p>
           </>
         )}

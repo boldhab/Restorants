@@ -42,6 +42,9 @@ class EmailService {
     }
 
     const transport = nodemailer.createTransport({
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000,
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE,

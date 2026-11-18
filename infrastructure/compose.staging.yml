@@ -15,6 +15,22 @@ services:
       interval: 20s
       timeout: 8s
       retries: 3
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    env_file: ../apps/api/.env.staging
+    command: ['node', 'apps/api/dist/scripts/worker.js']
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'node', '-e', "if(Date.now()-require('fs').statSync('/tmp/zayqora-worker-heartbeat').mtimeMs>60000)process.exit(1)"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      api:
+        condition: service_healthy
   web:
     build:
       context: ..

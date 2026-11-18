@@ -58,3 +58,7 @@ A verified session user is the owner; the body never supplies ownership. A singl
 Private state is component-local and keyed by restaurant ID. Switching unmounts the workspace, clears data, and ignores stale fetch completions. Logout clears the session and performs a fresh navigation. No sales/orders/analytics are invented; onboarding stays private and later functionality is clearly described as unavailable.
 
 Framework configuration was checked against the official [Next.js 16 upgrade guide](https://nextjs.org/docs/app/guides/upgrading/version-16), [rewrites reference](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites), [Zod migration guide](https://zod.dev/v4/changelog), and [node-pg-migrate documentation](https://salsita.github.io/node-pg-migrate/).
+
+## Phase 3 transactions
+
+The commerce module adds scoped guest sessions, carts/quotes, immutable order snapshots, independent fulfillment/payment/refund states, cover-based reservations, tenant reports, platform entitlements and a PostgreSQL outbox. See [transaction rules](phase-3-rules.md) and [operational architecture](phase-3.md) for locking/idempotency, payment recovery, guest identity, worker leases, report date definitions and suspension resolution. The existing tenant middleware defaults remain strict; only transaction-resolution routes explicitly allow active authorized memberships on suspended/archived tenants. New-business checks independently enforce live publication, active branch/tenant, owner settings and backend plan entitlement.

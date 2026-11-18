@@ -83,6 +83,7 @@ export function Workspace({
           </select>
         </label>
         <nav>
+          <Link href={`/workspace/${restaurantId}/operations`}>Orders, reservations & reports</Link>
           <Link className={!settings ? 'active' : ''} href={`/workspace/${restaurantId}/dashboard`}>
             ◫ &nbsp; Overview
           </Link>

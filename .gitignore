@@ -24,3 +24,5 @@ zayqora
 
 **/.next-e2e/
 **/next-env.d.ts
+
+**/.next-e2e-production/

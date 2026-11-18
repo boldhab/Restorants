@@ -1,3 +1,4 @@
+import { publicSettings } from '../commerce/commerce.service.js';
 import {
   configurationPrice,
   isOpen,
@@ -141,6 +142,7 @@ export async function publicWebsite(slug: string) {
   const availability = (await repo.execute(pool, 'selectItemAvailability', [r.restaurant_id])).rows;
   const now = new Date();
   return {
+    commerce: await publicSettings(r.restaurant_id),
     revision: r.id,
     publishedAt: r.created_at,
     draft: r.content,

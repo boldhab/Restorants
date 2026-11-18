@@ -3,6 +3,7 @@ export interface User {
   email: string;
   full_name: string;
   is_email_verified: boolean;
+  is_platform_admin?: boolean;
 }
 export interface Membership {
   restaurant_id: string;
@@ -33,7 +34,8 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
-    public code: string
+    public code: string,
+    public details?: unknown
   ) {
     super(message);
   }
@@ -59,13 +61,14 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const body = await res.json();
   if (!res.ok)
     throw new ApiError(
-      body.error?.details
+      (Array.isArray(body.error?.details) ? body.error.details : undefined)
         ?.map((d: { field: string; message: string }) => `${d.field}: ${d.message}`)
         .join(' · ') ||
         body.error?.message ||
         'Request failed',
       res.status,
-      body.error?.code || 'UNKNOWN'
+      body.error?.code || 'UNKNOWN',
+      body.error?.details
     );
   return body as T;
 }

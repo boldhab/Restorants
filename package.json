@@ -29,7 +29,12 @@
     "pretest:integration": "npm run build -w @zayqora/contracts",
     "predb:seed": "npm run build -w @zayqora/contracts",
     "db:seed:phase2": "npm run build -w @zayqora/contracts && node --import tsx apps/api/scripts/seed-phase2.ts",
-    "media:cleanup": "node --import tsx apps/api/scripts/cleanup-media.ts"
+    "media:cleanup": "node --import tsx apps/api/scripts/cleanup-media.ts",
+    "worker": "node --import tsx apps/api/scripts/worker.ts",
+    "worker:once": "npm run worker -- --once",
+    "payments:reconcile": "node --import tsx apps/api/scripts/reconcile-payments.ts",
+    "recovery:verify": "node --import tsx scripts/verify-recovery.ts",
+    "test:e2e:production": "npm run build -w @zayqora/contracts && API_PROXY_URL=http://127.0.0.1:4100 PUBLIC_ORIGIN=http://localhost:3100 NEXT_DIST_DIR=.next-e2e-production npm run build:web && E2E_PRODUCTION=true npm run test:e2e"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.1",

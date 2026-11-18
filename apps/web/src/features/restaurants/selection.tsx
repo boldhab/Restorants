@@ -25,6 +25,15 @@ export function RestaurantSelection() {
         </Link>
         <button onClick={() => logout().catch((e) => alert(e.message))}>Sign out</button>
       </header>
+      <nav>
+        <Link href="/customer/history">Your customer history</Link>
+        {session.user.is_platform_admin && (
+          <>
+            {' '}
+            · <Link href="/platform">Platform controls</Link>
+          </>
+        )}
+      </nav>
       <p className="eyebrow">YOUR RESTAURANTS</p>
       <h1>
         A place for every

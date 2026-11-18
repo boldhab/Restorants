@@ -1,3 +1,4 @@
+import { customerCommerceRouter,operationsRouter,platformRouter,accountRouter } from '../modules/commerce/commerce.routes.js';
 import { publishingRouter, publicWebsiteRouter } from '../modules/publishing/publishing.routes.js';
 import { env } from '../config/env.js';
 import { emailService } from '../integrations/email/email-service.js';
@@ -11,6 +12,11 @@ export const apiRouter = Router();
 
 // Mount health and readiness checks
 apiRouter.use('/', healthRouter);
+
+apiRouter.use('/commerce/:restaurantId',customerCommerceRouter);
+apiRouter.use('/operations/:restaurantId',operationsRouter);
+apiRouter.use('/platform',platformRouter);
+apiRouter.use('/customer',accountRouter);
 
 // Mount business feature routers
 apiRouter.use('/auth', generalLimiter, authRouter);

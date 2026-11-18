@@ -28,7 +28,7 @@ jobs:
       - run: npm run test:api
       - run: NODE_ENV=production npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e:production
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

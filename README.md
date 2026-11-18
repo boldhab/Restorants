@@ -55,3 +55,5 @@ Phase 2: [setup, publishing rules, storage, API, caching and release boundaries]
 Local abandoned-object cleanup: `npm run media:cleanup` is a dry run; add `-- --apply` to remove only untracked objects older than seven days. Referenced draft and historical images are retained.
 
 Phase 2 execution evidence and per-step status: [verification report](docs/phase-2-verification.md).
+
+Phase 3: [pickup commerce, reservations, worker operations and pilot boundaries](docs/phase-3.md), [transaction rules](docs/phase-3-rules.md), and [verification report](docs/phase-3-verification.md). Apply migrations before starting upgraded apps. Run `npm run worker` in a separate terminal. New ordering/reservations require both saved owner settings and a manually assigned platform entitlement; production online payment remains unconfigured.

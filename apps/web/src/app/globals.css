@@ -1185,3 +1185,99 @@ footer {
 .restaurant-site {
   overflow-wrap: anywhere;
 }
+/* Transaction journeys */
+.commerce-page {
+  max-width: 1150px;
+  padding: 2rem 1.25rem;
+  margin: auto;
+  min-height: 100vh;
+  overflow-wrap: anywhere;
+}
+.commerce-page > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #ccd8d6;
+}
+.commerce-page h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  margin: 2rem 0 1rem;
+}
+.commerce-page .panel {
+  margin: 1.5rem 0;
+}
+.commerce-page label {
+  display: block;
+  font-weight: 600;
+  margin: 0.8rem 0;
+}
+.commerce-page input:not([type='checkbox']),
+.commerce-page select,
+.commerce-page textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid #b3c5c1;
+  border-radius: 6px;
+  background: white;
+  padding: 0.75rem;
+  color: #17343e;
+}
+.commerce-page textarea {
+  min-height: 120px;
+}
+.commerce-page button {
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  margin: 0.25rem;
+  border: 1px solid #a8c0b8;
+  border-radius: 5px;
+  color: #123c36;
+  background: #fff;
+  cursor: pointer;
+}
+.commerce-page button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.commerce-page button[aria-pressed='true'] {
+  background: #164f45;
+  color: white;
+}
+.commerce-page .inline-fields > * {
+  flex: 1;
+  min-width: min(100%, 180px);
+}
+.commerce-page fieldset {
+  border: 1px solid #b8c9c3;
+  padding: 1rem;
+  margin: 1rem 0;
+  min-width: 0;
+}
+.commerce-page :focus-visible {
+  outline: 3px solid #bb8c25;
+  outline-offset: 3px;
+}
+.cart-row {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid #c8d5cf;
+}
+.checkout-panel {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid #1a6559;
+}
+.commerce-page .check-row input {
+  width: 20px;
+  height: 20px;
+}
+@media (max-width: 600px) {
+  .commerce-page {
+    padding: 1rem 0.75rem;
+  }
+  .commerce-page .panel {
+    padding: 1rem;
+  }
+}

@@ -33,6 +33,12 @@ export const PermissionCode = Object.freeze({
   STAFF_MANAGE: 'staff:manage',
   WORKSPACE_ACCESS: 'workspace:access',
   SETTINGS_UPDATE: 'settings:update',
+  ORDERS_READ: 'orders:read',
+  ORDERS_PROCESS: 'orders:process',
+  ORDERS_CANCEL: 'orders:cancel',
+  PAYMENTS_MANAGE: 'payments:manage',
+  RESERVATIONS_MANAGE: 'reservations:manage',
+  REPORTS_READ: 'reports:read',
 });
 
 export const ErrorCodes = Object.freeze({

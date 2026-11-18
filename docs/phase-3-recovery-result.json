@@ -1,0 +1,25 @@
+{
+  "verified": true,
+  "target": "separate temporary local recovery database",
+  "verifiedAt": "2026-11-18T18:03:12.347Z",
+  "counts": {
+    "restaurants": "2",
+    "website_revisions": "2",
+    "orders": "1",
+    "order_items": "1",
+    "payment_transactions": "1",
+    "refund_requests": "1",
+    "reservations": "1",
+    "reservation_allocations": "1",
+    "outbox_events": "7",
+    "notification_deliveries": "7",
+    "in_app_notifications": "7"
+  },
+  "checks": [
+    "Exact order snapshots/status/amounts",
+    "Exact payment records",
+    "Exact reservation intervals/party/state",
+    "Record counts for financial, publication and notification tables"
+  ],
+  "source": "dedicated local test database only"
+}

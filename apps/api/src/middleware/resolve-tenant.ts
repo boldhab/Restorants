@@ -1,7 +1,7 @@
 import { pool } from '../database/pool.js';
 import { ForbiddenError, NotFoundError } from '../shared/errors/app-error.js';
 
-export function resolveTenant(paramName = 'restaurantId') {
+export function resolveTenant(paramName = 'restaurantId', allowResolution = false) {
   return async (
     req: import('express').Request,
     res: import('express').Response,
@@ -53,7 +53,7 @@ export function resolveTenant(paramName = 'restaurantId') {
         );
       }
 
-      if (!['onboarding', 'active'].includes(row.restaurant_status))
+      if (!['onboarding', 'active', ...(allowResolution ? ['suspended','archived'] : [])].includes(row.restaurant_status))
         return next(new ForbiddenError('Restaurant is unavailable'));
 
       req.tenantContext = {

@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "ZAYQORA Phase 2",
-    "version": "2.0.0",
+    "title": "ZAYQORA Phase 3",
+    "version": "3.0.0",
     "description": "Same-origin session API. Every private response uses no-store. Errors have stable codes and request IDs. Local memory email capture is excluded from production."
   },
   "servers": [
@@ -2278,6 +2278,3320 @@
           }
         }
       }
+    },
+    "/commerce/{restaurantId}/session": {
+      "get": {
+        "summary": "Initialize or restore a signed restaurant guest credential",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "csrf": {
+                      "type": "string"
+                    },
+                    "restaurantId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "ordering": {
+                      "type": "boolean"
+                    },
+                    "reservations": {
+                      "type": "boolean"
+                    },
+                    "payAtPickup": {
+                      "type": "boolean"
+                    },
+                    "onlinePayment": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "csrf": {
+                      "type": "string"
+                    },
+                    "restaurantId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "ordering": {
+                      "type": "boolean"
+                    },
+                    "reservations": {
+                      "type": "boolean"
+                    },
+                    "payAtPickup": {
+                      "type": "boolean"
+                    },
+                    "onlinePayment": {
+                      "const": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/cart": {
+      "get": {
+        "summary": "Retrieve/restore the scoped cart, including invalid-line explanations",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Add/change/remove/clear cart lines with expected version",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "line": {
+                    "$ref": "#/components/schemas/CartLine"
+                  },
+                  "removeId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "clear": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "Exactly one line, removeId or clear:true operation is required."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Cart"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/quotes": {
+      "post": {
+        "summary": "Create a five-minute authoritative pickup quote",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/orders": {
+      "post": {
+        "summary": "Create an order safely or recover the same checkout operation",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity. Key scope is order + tenant + verified account or guest session; identical payload returns the original result, a changed fingerprint conflicts. test_online is accepted ONLY in NODE_ENV=test.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{8,128}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitOrder"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "get": {
+        "summary": "List this browser/account’s restaurant orders (latest 100)",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/orders/{orderId}": {
+      "get": {
+        "summary": "Read customer-safe order milestones and refund state",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/orders/{orderId}/cancellation": {
+      "post": {
+        "summary": "Cancel pending order or request staff review after acceptance",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/orders/{orderId}/payment": {
+      "post": {
+        "summary": "Request reconciliation of the existing test-only online identity; no new payment identity",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/reservations/availability": {
+      "get": {
+        "summary": "Advisory cover availability with explicit UTC instants and local offset labels",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "party",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/reservations": {
+      "post": {
+        "summary": "Request staff-confirmed reservation with transactional overlap capacity checking",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reservation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "get": {
+        "summary": "List scoped reservation history (latest 100)",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/reservations/{reservationId}": {
+      "patch": {
+        "summary": "Manage own reservation or atomically reschedule",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reservationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "reason"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "status": {
+                    "enum": [
+                      "PENDING",
+                      "CONFIRMED",
+                      "DECLINED",
+                      "CANCELLED",
+                      "EXPIRED",
+                      "SEATED",
+                      "COMPLETED",
+                      "NO_SHOW"
+                    ]
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "description": "Exactly one status or new UTC start. Customers may cancel or atomically reschedule pending/confirmed future records; staff have explicit additional transitions."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/profile": {
+      "get": {
+        "summary": "Read tenant-specific account profile/preferences; verified login required",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "phone": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "transactionalEmail": {
+                      "type": "boolean"
+                    },
+                    "marketingConsent": {
+                      "type": "boolean"
+                    },
+                    "addresses": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "address": {
+                            "type": "string",
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "address"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "phone",
+                    "transactionalEmail",
+                    "marketingConsent",
+                    "addresses"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "phone": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "transactionalEmail": {
+                      "type": "boolean"
+                    },
+                    "marketingConsent": {
+                      "type": "boolean"
+                    },
+                    "addresses": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "address": {
+                            "type": "string",
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "address"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "phone",
+                    "transactionalEmail",
+                    "marketingConsent",
+                    "addresses"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update own profile, addresses and separate marketing consent; verified login required",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": [],
+            "guestCsrf": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100
+                  },
+                  "phone": {
+                    "type": "string",
+                    "maxLength": 30
+                  },
+                  "transactionalEmail": {
+                    "type": "boolean"
+                  },
+                  "marketingConsent": {
+                    "type": "boolean"
+                  },
+                  "addresses": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "maxLength": 50
+                        },
+                        "address": {
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "address"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "phone",
+                  "transactionalEmail",
+                  "marketingConsent",
+                  "addresses"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "phone": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "transactionalEmail": {
+                      "type": "boolean"
+                    },
+                    "marketingConsent": {
+                      "type": "boolean"
+                    },
+                    "addresses": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "address": {
+                            "type": "string",
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "address"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "phone",
+                    "transactionalEmail",
+                    "marketingConsent",
+                    "addresses"
+                  ]
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 2,
+                      "maxLength": 100
+                    },
+                    "phone": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "transactionalEmail": {
+                      "type": "boolean"
+                    },
+                    "marketingConsent": {
+                      "type": "boolean"
+                    },
+                    "addresses": {
+                      "type": "array",
+                      "maxItems": 10,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "address": {
+                            "type": "string",
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "address"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "phone",
+                    "transactionalEmail",
+                    "marketingConsent",
+                    "addresses"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/commerce/{restaurantId}/notifications": {
+      "get": {
+        "summary": "Read deduplicated in-app business updates",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Guest credential scoped to this restaurant or verified account ownership. Initialize the guest session first. Never link historical orders by email. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "guestSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/customer/history": {
+      "get": {
+        "summary": "Read verified account history across restaurants; never claim guest records by email",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "reservations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Reservation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "orders": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    },
+                    "reservations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Reservation"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/settings": {
+      "get": {
+        "summary": "Read business settings and plan entitlements; restaurant:update",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update versioned operational configuration; restaurant:update",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "settings": {
+                    "$ref": "#/components/schemas/CommerceSettings"
+                  }
+                },
+                "required": [
+                  "version",
+                  "settings"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/orders": {
+      "get": {
+        "summary": "Paginated tenant order list; orders:read",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "CONFIRMED",
+                "PREPARING",
+                "READY",
+                "COMPLETED",
+                "CANCELLED",
+                "REJECTED",
+                "EXPIRED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "payment",
+            "schema": {
+              "enum": [
+                "UNPAID",
+                "PENDING",
+                "UNKNOWN",
+                "PAID",
+                "FAILED"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "reference",
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9-]{1,20}$"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/orders/{orderId}": {
+      "get": {
+        "summary": "Read tenant order details/audit/refund/reconciliation state; orders:read",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Transition fulfillment with optimistic version; orders:process plus orders:cancel for rejection/cancellation",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "status",
+                  "reason"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "status": {
+                    "enum": [
+                      "PENDING",
+                      "CONFIRMED",
+                      "PREPARING",
+                      "READY",
+                      "COMPLETED",
+                      "CANCELLED",
+                      "REJECTED",
+                      "EXPIRED"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  },
+                  "preparationMinutes": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 180
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/orders/{orderId}/collection": {
+      "post": {
+        "summary": "Audited pay-at-pickup collection only; payments:manage",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/orders/{orderId}/refunds": {
+      "post": {
+        "summary": "Reserve a refund amount under order lock; payments:manage",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100000000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3
+                  }
+                },
+                "required": [
+                  "amount",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/refunds/{refundId}/confirmation": {
+      "post": {
+        "summary": "Explicitly record returned pickup funds; payments:manage",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "refundId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/reservations": {
+      "get": {
+        "summary": "Reservation calendar list, 50 records; reservations:manage",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reservation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/reservations/{reservationId}": {
+      "patch": {
+        "summary": "Versioned confirmation/decline/cancel/seat/complete/no-show/reschedule; reservations:manage",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "reservationId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "reason"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "status": {
+                    "enum": [
+                      "PENDING",
+                      "CONFIRMED",
+                      "DECLINED",
+                      "CANCELLED",
+                      "EXPIRED",
+                      "SEATED",
+                      "COMPLETED",
+                      "NO_SHOW"
+                    ]
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "description": "Exactly one status or new UTC start. Customers may cancel or atomically reschedule pending/confirmed future records; staff have explicit additional transitions."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/reports": {
+      "get": {
+        "summary": "Currency-separated operational and cash collection reports; reports:read",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/notifications/jobs": {
+      "get": {
+        "summary": "Outbox backlog/failure visibility (latest 100); restaurant:update",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/notifications/jobs/{jobId}/retry": {
+      "post": {
+        "summary": "Explicit failed-job retry preserving delivery history; restaurant:update",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "jobId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/platform/tenants": {
+      "get": {
+        "summary": "List tenants (50 records) and manually managed plans",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified separate platform administrator assignment. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/platform/plans": {
+      "get": {
+        "summary": "List basic and controlled-pilot plan definitions",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified separate platform administrator assignment. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/platform/tenants/{restaurantId}": {
+      "get": {
+        "summary": "Tenant settings/entitlements and platform audit history",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified separate platform administrator assignment. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Activate/suspend/reactivate or assign plan/trial with mandatory reason",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified separate platform administrator assignment. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "reason"
+                ],
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "active",
+                      "suspended",
+                      "onboarding"
+                    ]
+                  },
+                  "plan": {
+                    "enum": [
+                      "basic",
+                      "pilot"
+                    ]
+                  },
+                  "subscriptionStatus": {
+                    "enum": [
+                      "manual",
+                      "trial",
+                      "inactive"
+                    ]
+                  },
+                  "trialEndsAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/test/payment-webhook": {
+      "post": {
+        "summary": "TEST ONLY: signed deterministic provider-event simulator",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Registered ONLY when NODE_ENV=test, absent in development and production. Raw JSON bytes are HMAC-SHA256 signed as timestamp + dot + raw body using the test COOKIE_SECRET. Five-minute timestamp tolerance. Merchant/ref/amount/currency checked; events deduplicated durably. Not a real provider integration.",
+        "security": [],
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Test-Signature",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Test-Timestamp",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  },
+                  "merchant": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "PENDING",
+                      "PAID",
+                      "FAILED"
+                    ]
+                  }
+                },
+                "required": [
+                  "eventId",
+                  "reference",
+                  "merchant",
+                  "amount",
+                  "currency",
+                  "status"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/platform/operations/health": {
+      "get": {
+        "summary": "Read outbox/payment/expiration monitoring counters; platform administrator only",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified separate platform administrator assignment. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
+    },
+    "/operations/{restaurantId}/orders/{orderId}/cancellation-resolution": {
+      "post": {
+        "summary": "Explicitly approve/decline an accepted-order cancellation request; orders:cancel",
+        "tags": [
+          "Phase 3"
+        ],
+        "description": "Verified active tenant membership with the operation-specific permission. Resolution routes remain accessible during suspension. No shared caching. Existing cookie sessions require X-CSRF-Token on mutations. Rate limit: 300 requests / 15 minutes / IP per API process (test environment raises limits). Business conflicts are 409; quote conflicts include details.quote and require explicit reconfirmation. Network uncertainty must reuse the original operation identity.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "restaurantId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "path",
+            "name": "orderId",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "decision": {
+                    "enum": [
+                      "approve",
+                      "decline"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "version",
+                  "decision",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields, configuration, amounts, date or contact"
+          },
+          "401": {
+            "description": "Account session required"
+          },
+          "403": {
+            "description": "Credential, permission, CSRF, entitlement or business-mode restriction"
+          },
+          "404": {
+            "description": "Scoped record not found"
+          },
+          "409": {
+            "description": "Version/state/idempotency/quote/capacity conflict"
+          },
+          "429": {
+            "description": "Rate limited; retry per response headers"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4401,6 +7715,723 @@
           "sections"
         ],
         "additionalProperties": false
+      },
+      "CommerceSettings": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "payAtPickup": {
+            "type": "boolean"
+          },
+          "minimum": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "taxBps": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10000
+          },
+          "serviceCharge": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000000
+          },
+          "leadMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 180
+          },
+          "reservations": {
+            "type": "boolean"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 240
+          },
+          "bufferMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "slotMinutes": {
+            "type": "string",
+            "enum": [
+              "15",
+              "30",
+              "60"
+            ]
+          },
+          "reservationLeadMinutes": {
+            "type": "integer",
+            "minimum": 15,
+            "maximum": 10080
+          },
+          "advanceDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 90
+          },
+          "maxParty": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "holdMinutes": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 60
+          },
+          "blackouts": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "end": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                }
+              },
+              "required": [
+                "start",
+                "end"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "payAtPickup",
+          "minimum",
+          "taxBps",
+          "serviceCharge",
+          "leadMinutes",
+          "reservations",
+          "capacity",
+          "durationMinutes",
+          "bufferMinutes",
+          "slotMinutes",
+          "reservationLeadMinutes",
+          "advanceDays",
+          "maxParty",
+          "holdMinutes",
+          "blackouts"
+        ],
+        "additionalProperties": false
+      },
+      "CartLine": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "variantId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "options": {
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "itemId",
+          "options",
+          "quantity"
+        ],
+        "additionalProperties": false
+      },
+      "Contact": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "phone": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 30
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "phone"
+        ],
+        "additionalProperties": false
+      },
+      "SubmitOrder": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 100
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email",
+                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              "phone": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "name",
+              "email",
+              "phone"
+            ],
+            "additionalProperties": false
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "pay_at_pickup",
+              "test_online"
+            ]
+          }
+        },
+        "required": [
+          "quoteId",
+          "contact",
+          "method"
+        ],
+        "additionalProperties": false
+      },
+      "ReservationRequest": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "party": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 100
+              },
+              "email": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "email",
+                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+              },
+              "phone": {
+                "type": "string",
+                "minLength": 5,
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "name",
+              "email",
+              "phone"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "start",
+          "party",
+          "contact"
+        ],
+        "additionalProperties": false
+      },
+      "Cart": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "itemId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unit": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "lineTotal": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "variant": {
+                  "type": [
+                    "object",
+                    "null"
+                  ]
+                },
+                "modifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "message": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cart_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cart_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "settings_version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "revision_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "content": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string"
+              },
+              "subtotal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tax": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "serviceCharge": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deliveryFee": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "itemId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "unit": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "lineTotal": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "variant": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "modifiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fulfillment": {
+                "const": "pickup"
+              },
+              "leadMinutes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "restaurantId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "PREPARING",
+              "READY",
+              "COMPLETED",
+              "CANCELLED",
+              "REJECTED",
+              "EXPIRED"
+            ]
+          },
+          "paymentStatus": {
+            "type": "string",
+            "enum": [
+              "UNPAID",
+              "PENDING",
+              "UNKNOWN",
+              "PAID",
+              "FAILED"
+            ]
+          },
+          "method": {
+            "enum": [
+              "pay_at_pickup",
+              "test_online"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "snapshot": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string"
+              },
+              "subtotal": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "tax": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "serviceCharge": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "deliveryFee": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "itemId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "quantity": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "unit": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "lineTotal": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "variant": {
+                      "type": [
+                        "object",
+                        "null"
+                      ]
+                    },
+                    "modifiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "fulfillment": {
+                "const": "pickup"
+              },
+              "leadMinutes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cancellationRequested": {
+            "type": "boolean"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "refunds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "amount": {
+                  "type": "string",
+                  "description": "PostgreSQL bigint minor units"
+                },
+                "status": {
+                  "enum": [
+                    "PENDING",
+                    "CONFIRMED",
+                    "FAILED"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Reservation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "DECLINED",
+              "CANCELLED",
+              "EXPIRED",
+              "SEATED",
+              "COMPLETED",
+              "NO_SHOW"
+            ]
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "party": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "contact": {
+            "$ref": "#/components/schemas/Contact"
+          },
+          "holdExpiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -4408,6 +8439,18 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "zayqora_sid"
+      },
+      "guestSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "zq_guest_<restaurant UUID without hyphens>",
+        "description": "Dynamic per-restaurant signed HttpOnly cookie issued by GET /commerce/{restaurantId}/session. Cart/order/reservation IDs alone grant no access. Expires in 30 days. Never send in a URL."
+      },
+      "guestCsrf": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Guest-CSRF",
+        "description": "Session-bound HMAC returned by GET /commerce/{restaurantId}/session; required for guest and authenticated commerce mutations. Existing account sessions ALSO require X-CSRF-Token."
       }
     },
     "responses": {

@@ -16,12 +16,13 @@ export const systemRoles = [
       PermissionCode.STAFF_MANAGE,
       PermissionCode.WORKSPACE_ACCESS,
       PermissionCode.SETTINGS_UPDATE,
+      PermissionCode.ORDERS_READ, PermissionCode.ORDERS_PROCESS, PermissionCode.ORDERS_CANCEL, PermissionCode.PAYMENTS_MANAGE, PermissionCode.RESERVATIONS_MANAGE, PermissionCode.REPORTS_READ,
     ],
   },
   {
     name: RoleCode.STAFF,
     description: 'General front-of-house staff member',
-    permissions: [PermissionCode.RESTAURANT_READ, PermissionCode.WORKSPACE_ACCESS],
+    permissions: [PermissionCode.RESTAURANT_READ, PermissionCode.WORKSPACE_ACCESS,PermissionCode.ORDERS_READ,PermissionCode.ORDERS_PROCESS,PermissionCode.RESERVATIONS_MANAGE],
   },
   {
     name: RoleCode.KITCHEN,

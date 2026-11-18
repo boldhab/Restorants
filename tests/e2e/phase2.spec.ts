@@ -115,17 +115,20 @@ test('owner setup, menu, private preview, publication and visitor lifecycle at t
     expect(
       await publicPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
     ).toBeTruthy();
+    await expect(publicPage.locator('.hero-photo:visible')).toHaveCount(1);
     await expect
       .poll(() =>
-        publicPage.locator('.hero-photo').evaluate((img: HTMLImageElement) => img.naturalWidth)
+        publicPage
+          .locator('.hero-photo:visible')
+          .evaluate((img: HTMLImageElement) => img.naturalWidth)
       )
       .toBeGreaterThan(0);
     await publicPage.screenshot({ path: `test-results/phase2-${width}.png`, fullPage: true });
   }
   await publicPage.goto(`/r/${slug}/menu`);
-  await publicPage.getByLabel('Search dishes').fill('absent');
+  await publicPage.getByRole('searchbox', { name: 'Search dishes' }).fill('absent');
   await expect(publicPage.getByText('No matching dishes.')).toBeVisible();
-  await publicPage.getByLabel('Search dishes').fill('coffee');
+  await publicPage.getByRole('searchbox', { name: 'Search dishes' }).fill('coffee');
   await publicPage.getByRole('button', { name: 'View dish', exact: true }).click();
   await expect(publicPage.getByRole('dialog')).toBeVisible();
   await publicPage.getByLabel('Choose a variant').selectOption({ label: 'Large — ETB 12.00' });
@@ -172,7 +175,9 @@ test('owner setup, menu, private preview, publication and visitor lifecycle at t
     ).ok()
   ).toBeTruthy();
   await publicPage.reload();
-  await expect(publicPage.getByText('Sold out', { exact: true })).toBeVisible();
+  await expect(
+    publicPage.getByRole('article').getByText('Sold out', { exact: true })
+  ).toBeVisible();
   const unpublished = await page.request.post(`${base}/website/unpublish`, {
     headers,
     data: { version: saved.version + 1 },

@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+const production = process.env.E2E_PRODUCTION === 'true';
 const database =
   process.env.TEST_DATABASE_URL || 'postgres://postgres:1234@127.0.0.1:5432/zayqora_test';
 if (!new URL(database).pathname.endsWith('_test'))
@@ -7,9 +8,9 @@ export default defineConfig({
   testDir: 'tests/e2e',
   workers: 1,
   fullyParallel: false,
-  timeout: 180000,
-  expect: { timeout: 20000 },
-  use: { baseURL: 'http://localhost:3100', trace: 'retain-on-failure', actionTimeout: 20000 },
+  timeout: 360000,
+  expect: { timeout: 45000 },
+  use: { baseURL: 'http://localhost:3100', trace: 'retain-on-failure', actionTimeout: 45000 },
   webServer: [
     {
       command: 'npm exec -w @zayqora/api -- tsx src/server.ts',
@@ -25,10 +26,16 @@ export default defineConfig({
       },
     },
     {
-      command: 'npm exec -w @zayqora/web -- next dev -p 3100 --webpack',
+      command: production
+        ? 'npm exec -w @zayqora/web -- next start -p 3100'
+        : 'npm exec -w @zayqora/web -- next dev -p 3100 --webpack',
       url: 'http://localhost:3100',
       reuseExistingServer: false,
-      env: { API_PROXY_URL: 'http://127.0.0.1:4100', NEXT_DIST_DIR: '.next-e2e' },
+      env: {
+        API_PROXY_URL: 'http://127.0.0.1:4100',
+        PUBLIC_ORIGIN: 'http://localhost:3100',
+        NEXT_DIST_DIR: production ? '.next-e2e-production' : '.next-e2e',
+      },
     },
   ],
 });

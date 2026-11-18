@@ -1,3 +1,4 @@
+import { testPaymentWebhook } from './modules/commerce/commerce.routes.js';
 import express from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -34,6 +35,8 @@ export function createApp() {
 
   // Cookie parsing with secret
   app.use(cookieParser(env.COOKIE_SECRET));
+
+  if (env.IS_TEST) app.post('/api/v1/test/payment-webhook', ...testPaymentWebhook);
 
   // JSON Body parsing with explicit size limit (1MB)
   app.use(express.json({ limit: '1mb' }));
