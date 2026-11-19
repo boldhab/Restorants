@@ -24,7 +24,10 @@ export const commerceSettingsSchema = z
             start: z.iso.datetime({ offset: true }),
             end: z.iso.datetime({ offset: true }),
           })
-          .refine((v) => v.start < v.end, 'Blackout end must follow start')
+          .refine(
+            (v) => Date.parse(v.start) < Date.parse(v.end),
+            'Blackout end must follow start'
+          )
       )
       .max(100),
   })

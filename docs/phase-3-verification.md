@@ -32,8 +32,9 @@ Phase 3 is implemented in the existing repository and architecture. The initial 
 ## Executed verification
 
 - Baseline: lint/TypeScript and 46 Phase 1/2 API/unit/security tests passed.
-- Full Phase 1–3 regression command: `NODE_ENV=test node --import tsx --test --test-concurrency=1 apps/api/tests/unit/*.test.ts apps/api/tests/integration/*.test.ts apps/api/tests/security/*.test.ts` — **61 tests passed**, no skips/failures, before the final accepted-order cancellation review addition.
+- Full Phase 1–3 regression command: `npm run test:api` — **62 tests passed**, no skips/failures, including the accepted-order cancellation review addition.
 - Final focused PostgreSQL command: `NODE_ENV=test node --import tsx --test --test-concurrency=1 apps/api/tests/integration/phase3.test.ts` — **14 tests passed**, including cancellation review, publication privacy, refund recovery, reservation confirmation after unpublishing and local reporting boundaries.
+- Final blackout validation compares absolute instants across UTC offsets; the focused commerce unit test passed with valid and reversed cross-offset intervals. ESLint excludes the generated production-browser artifact, matching the existing Next build exclusions.
 - `npm run lint` passed ESLint, shared/API TypeScript, Next route generation and frontend TypeScript after these changes.
 - `npm run build` passed shared contracts, API/worker compilation and Next production compilation/types/static generation. The final browser-specific production build uses `API_PROXY_URL=http://127.0.0.1:4100 PUBLIC_ORIGIN=http://localhost:3100 NEXT_DIST_DIR=.next-e2e-production npm run build:web`.
 - The focused Phase 3 browser journey passed twice in development mode, including guest/account checkout, staff completion/refund, reservations, account isolation and platform restriction.
