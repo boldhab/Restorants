@@ -1,9 +1,61 @@
+/* Platform palette. Brand is decorative; primary is the accessible action/text color. */
 :root {
-  --ink: #23352b;
-  --muted: #748075;
-  --paper: #f7f8f2;
-  --green: #264c39;
-  --lime: #d6e8a1;
-  --line: #dfe4d9;
-  --radius: 14px;
+  color-scheme: light;
+  --color-brand: #c65d35;
+  --color-primary: #a84724;
+  --color-primary-hover: #8f391d;
+  --color-primary-light: #fff1ea;
+  --color-brand-border: #e3aa91;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8f9fa;
+  --color-text-primary: #24211f;
+  --color-text-secondary: #666666;
+  --color-border: #e5e7eb;
+  --color-control-border: #85817e;
+  --color-focus: #a84724;
+  --color-success: #23734a;
+  --color-success-light: #eef8f1;
+  --color-warning: #9a5800;
+  --color-warning-light: #fff6e5;
+  --color-error: #b42318;
+  --color-error-hover: #912018;
+  --color-error-light: #fef3f2;
+  --color-info: #2563eb;
+  --color-info-light: #eff6ff;
+  --color-chart-secondary: #23734a;
+  --color-chart-tertiary: #2563eb;
+  --color-chart-grid: #e5e7eb;
+  --color-hero-background: #24211f;
+  --color-overlay: rgb(36 33 31 / 65%);
+  --color-hero-overlay: linear-gradient(90deg, rgb(0 0 0 / 80%), rgb(0 0 0 / 65%));
+
+  /* Customer theme choices remain independent of administrative branding. */
+  --color-storefront-forest: #204c3e;
+  --color-storefront-forest-ink: #22362c;
+  --color-storefront-navy: #193b59;
+  --color-storefront-navy-ink: #172f45;
+  --color-storefront-terracotta: #893f2d;
+  --color-storefront-terracotta-ink: #4d3027;
+
+  --font-ui: Arial, Helvetica, sans-serif;
+  --font-editorial: Georgia, 'Times New Roman', serif;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --control-height: 44px;
+
+  /* Compatibility aliases for existing layouts; not separate palettes. */
+  --ink: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --paper: var(--color-background);
+  --line: var(--color-border);
+  --radius: var(--radius-lg);
 }
