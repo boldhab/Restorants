@@ -1,6 +1,6 @@
 'use client';
 import { commerce } from '../../lib/commerce-client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { configurationPrice, formatMoney, isOpen, type Draft, type Item } from '@zayqora/contracts';
 import { api } from '../../lib/api-client';
 export type SiteData = {
@@ -47,6 +47,11 @@ export function RestaurantSite({
   const { draft: d } = live;
   const s = d.settings,
     t = d.theme;
+  const [navOpen, setNavOpen] = useState(false);
+  const navigationId = useId();
+  const fallbackPhoto = '/images/restaurant-atmosphere.webp';
+  const StoryHeading = page === 'about' ? 'h1' : 'h2';
+  const restaurantOpen = live.open ?? isOpen(s.hours, s.timezone);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [selected, setSelected] = useState<Item | null>(null);
@@ -65,15 +70,28 @@ export function RestaurantSite({
       ? `/api/v1/restaurants/${restaurantId}/media/${id}`
       : `/api/v1/public/restaurants/${slug}/media/${id}`;
   function image(id: string | null, className = '') {
-    if (!id) return null;
+    const atmosphere = className === 'hero-photo' || className === 'story-photo';
+    if (!id && !atmosphere) return null;
+    const recover = (element: HTMLImageElement) => {
+      if (atmosphere && !element.src.endsWith(fallbackPhoto)) {
+        element.src = fallbackPhoto;
+      } else {
+        element.hidden = true;
+      }
+    };
     return (
       <img
+        ref={(element) => {
+          // A server-rendered image can fail before hydration attaches onError.
+          if (element?.complete && element.naturalWidth === 0) recover(element);
+        }}
         className={className}
-        src={imageUrl(id)}
-        alt={data.assets.find((a) => a.id === id)?.alt || ''}
-        loading="lazy"
+        src={id ? imageUrl(id) : fallbackPhoto}
+        alt={id ? data.assets.find((a) => a.id === id)?.alt || '' : ''}
+        loading={className === 'hero-photo' ? 'eager' : 'lazy'}
+        fetchPriority={className === 'hero-photo' ? 'high' : undefined}
         onError={(e) => {
-          e.currentTarget.hidden = true;
+          recover(e.currentTarget);
         }}
       />
     );
@@ -210,10 +228,28 @@ export function RestaurantSite({
     </section>
   );
   const about = t.story ? (
-    <section id="about">
-      <p className="eyebrow">OUR STORY</p>
-      <h2>A place at our table.</h2>
-      <p className="story-copy">{t.story}</p>
+    <section id="about" className="restaurant-story">
+      <div className="story-visual">
+        {image(t.gallery[0] || s.cover, 'story-photo')}
+        <span className="story-image-label">{s.name}</span>
+      </div>
+      <div className="story-content">
+        <p className="eyebrow">OUR STORY</p>
+        <StoryHeading>A place at our table.</StoryHeading>
+        <div className="story-rule" aria-hidden="true" />
+        <p className="story-copy">{t.story || s.description}</p>
+        <a
+          className="button-outline story-menu-link"
+          href={restaurantId ? '#menu' : `${base}/menu`}
+        >
+          Explore our menu
+        </a>
+        <div className="story-visit">
+          <p className="eyebrow">WE’D LOVE TO SEE YOU</p>
+          <p>{s.address}</p>
+          <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>
+        </div>
+      </div>
     </section>
   ) : null;
   const gallery = t.gallery.length ? (
@@ -245,9 +281,29 @@ export function RestaurantSite({
           </p>
           <h1>{t.title}</h1>
           <p>{t.description || s.description}</p>
-          <a className="site-primary" href={restaurantId ? '#menu' : `${base}/menu`}>
-            View Menu ↗
-          </a>
+          <div className="hero-actions">
+            <a className="site-primary" href={restaurantId ? '#menu' : `${base}/menu`}>
+              View Menu
+            </a>
+            {!restaurantId && live.commerce?.reservations ? (
+              <a
+                className="hero-secondary"
+                href={`/shop/${live.commerce.restaurantId}/reservations`}
+              >
+                Reserve a visit
+              </a>
+            ) : enabled('contact') ? (
+              <a className="hero-secondary" href={restaurantId ? '#contact' : `${base}/contact`}>
+                Plan your visit
+              </a>
+            ) : null}
+          </div>
+          <div className="hero-details">
+            <span>{s.address}</span>
+            <span>
+              {restaurantOpen ? 'Restaurant open' : 'Currently closed · Explore our menu'}
+            </span>
+          </div>
         </div>
       </section>
     ),
@@ -266,31 +322,99 @@ export function RestaurantSite({
   };
   return (
     <div className={`restaurant-site theme-${t.color} font-${t.font}`}>
+      <a className="site-skip-link" href="#restaurant-content">
+        Skip to content
+      </a>
       <header className="restaurant-header">
         <a href={restaurantId ? '#' : base} className="restaurant-brand">
-          {image(s.logo)}
-          {s.name}
+          {s.logo ? (
+            image(s.logo)
+          ) : (
+            <span className="restaurant-monogram" aria-hidden="true">
+              {s.name.charAt(0)}
+            </span>
+          )}
+          <span>
+            {s.name}
+            <small>{s.category}</small>
+          </span>
         </a>
-        <nav aria-label="Restaurant navigation">
-          {!restaurantId && live.commerce?.ordering && (
-            <a href={`/shop/${live.commerce.restaurantId}/cart`}>Pickup cart</a>
-          )}
-          {!restaurantId && live.commerce?.reservations && (
-            <a href={`/shop/${live.commerce.restaurantId}/reservations`}>Reserve a visit</a>
-          )}
-          <a href={restaurantId ? '#menu' : `${base}/menu`}>Menu</a>
+        <button
+          className="restaurant-nav-toggle"
+          aria-label={navOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={navOpen}
+          aria-controls={navigationId}
+          onClick={() => setNavOpen(!navOpen)}
+        >
+          <span className="restaurant-nav-label">{navOpen ? 'Close menu' : 'Open menu'}</span>
+          <span aria-hidden="true">{navOpen ? '×' : '☰'}</span>
+        </button>
+        <nav
+          id={navigationId}
+          data-open={navOpen}
+          aria-label="Restaurant navigation"
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest('a')) setNavOpen(false);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setNavOpen(false);
+              (event.currentTarget.previousElementSibling as HTMLButtonElement)?.focus();
+            }
+          }}
+        >
+          <a
+            aria-current={!restaurantId && page === 'home' ? 'page' : undefined}
+            href={restaurantId ? '#' : base}
+          >
+            Home
+          </a>
+          <a
+            aria-current={!restaurantId && page === 'menu' ? 'page' : undefined}
+            href={restaurantId ? '#menu' : `${base}/menu`}
+          >
+            Menu
+          </a>
           {enabled('about') && t.story && (
-            <a href={restaurantId ? '#about' : `${base}/about`}>Our story</a>
+            <a
+              aria-current={!restaurantId && page === 'about' ? 'page' : undefined}
+              href={restaurantId ? '#about' : `${base}/about`}
+            >
+              Our story
+            </a>
           )}
           {enabled('gallery') && t.gallery.length > 0 && (
-            <a href={restaurantId ? '#gallery' : `${base}/gallery`}>Gallery</a>
+            <a
+              aria-current={!restaurantId && page === 'gallery' ? 'page' : undefined}
+              href={restaurantId ? '#gallery' : `${base}/gallery`}
+            >
+              Gallery
+            </a>
           )}
           {enabled('contact') && (
-            <a href={restaurantId ? '#contact' : `${base}/contact`}>Contact</a>
+            <a
+              aria-current={!restaurantId && page === 'contact' ? 'page' : undefined}
+              href={restaurantId ? '#contact' : `${base}/contact`}
+            >
+              Contact
+            </a>
+          )}
+          {!restaurantId && live.commerce?.reservations && (
+            <a
+              className="site-reservation-link"
+              href={`/shop/${live.commerce.restaurantId}/reservations`}
+            >
+              Reserve a visit
+            </a>
+          )}
+          {!restaurantId && live.commerce?.ordering && (
+            <a className="site-order-link" href={`/shop/${live.commerce.restaurantId}/cart`}>
+              Pickup cart
+            </a>
           )}
         </nav>
       </header>
-      <main>
+      <main id="restaurant-content">
         {page === 'home' ? (
           t.sections.filter((s) => s.visible).map((s) => <div key={s.name}>{sections[s.name]}</div>)
         ) : page === 'menu' ? (
@@ -308,12 +432,60 @@ export function RestaurantSite({
           <p>This page is unavailable.</p>
         )}
       </main>
-      <footer>
-        <strong>{s.name}</strong>
-        <p>{s.description}</p>
-        <p>{s.serviceModes.map((m) => m.replace('_', ' ')).join(' · ')}</p>
-        {t.policy && <p>{t.policy}</p>}
-        <small>Powered by ZAYQORA</small>
+      <footer className="restaurant-footer">
+        <div className="footer-invitation">
+          <div>
+            <p className="eyebrow">THERE’S A PLACE FOR YOU</p>
+            <h2>
+              Come for the food.
+              <br />
+              Stay for the moment.
+            </h2>
+          </div>
+          <a className="site-order-link" href={restaurantId ? '#menu' : `${base}/menu`}>
+            Discover the menu
+          </a>
+        </div>
+        <div className="footer-columns">
+          <div className="footer-intro">
+            <strong>{s.name}</strong>
+            <p>{s.description}</p>
+            <p className="fine-print">
+              {s.serviceModes.map((m) => m.replace('_', ' ')).join(' · ')}
+            </p>
+          </div>
+          <nav aria-label="Footer navigation">
+            <h3>Explore</h3>
+            <a href={restaurantId ? '#' : base}>Home</a>
+            <a href={restaurantId ? '#menu' : `${base}/menu`}>Our menu</a>
+            {enabled('about') && t.story && (
+              <a href={restaurantId ? '#about' : `${base}/about`}>Our story</a>
+            )}
+            {enabled('gallery') && t.gallery.length > 0 && (
+              <a href={restaurantId ? '#gallery' : `${base}/gallery`}>Gallery</a>
+            )}
+          </nav>
+          <div className="footer-contact">
+            <h3>Visit & connect</h3>
+            <address>
+              {s.address}
+              <a href={`tel:${s.phone.replace(/[^+\d]/g, '')}`}>{s.phone}</a>
+              <a href={`mailto:${s.email}`}>{s.email}</a>
+            </address>
+            {enabled('contact') && (
+              <a href={restaurantId ? '#hours' : `${base}/contact`}>Hours & directions</a>
+            )}
+          </div>
+        </div>
+        {t.policy && <p className="footer-policy">{t.policy}</p>}
+        <div className="footer-bottom">
+          <small>
+            © {new Date().getFullYear()} {s.name}
+          </small>
+          <small>
+            Powered by <strong>ZAYQORA</strong>
+          </small>
+        </div>
       </footer>
       <dialog
         ref={dialog}
@@ -340,7 +512,11 @@ export function RestaurantSite({
             <h2 id="dish-title">{selected.name}</h2>
             <p>{selected.description}</p>
             {selected.dietary && <p>Dietary labels: {selected.dietary}</p>}
-            {selected.allergens && <p>Allergens: {selected.allergens}</p>}
+            {selected.allergens && (
+              <p className="allergy-note">
+                <strong>Allergens:</strong> {selected.allergens}
+              </p>
+            )}
             <p className="fine-print">
               Dietary and allergen information is supplied by the restaurant. Please contact them
               about your needs.
@@ -430,11 +606,23 @@ export function RestaurantSite({
             </button>
             {!restaurantId && live.commerce?.ordering && (
               <button
+                className="button-primary"
                 onClick={async () => {
                   try {
                     configurationPrice(selected, variant || undefined, options);
                     const id = live.commerce!.restaurantId;
-                    const cart = await commerce<{ version: number }>(id, '/cart');
+                    let cart = await commerce<{
+                      version: number;
+                      operational_context?: { mode?: string; channel?: string };
+                    }>(id, '/cart');
+                    if (
+                      cart.operational_context?.mode === 'dine_in' ||
+                      cart.operational_context?.channel === 'pos'
+                    )
+                      cart = await commerce(id, '/context', {
+                        method: 'POST',
+                        body: JSON.stringify({ channel: 'online', mode: 'pickup' }),
+                      });
                     await commerce(id, '/cart', {
                       method: 'PATCH',
                       body: JSON.stringify({
