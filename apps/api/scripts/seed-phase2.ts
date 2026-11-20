@@ -10,6 +10,8 @@ try {
   for (const [slug, category, item, color, price] of [
     ['bella-italia', 'Pasta', 'Demo · Garden pasta', '#6b7c42', 1400],
     ['tokyo-ramen', 'Ramen', 'Demo · Miso ramen', '#983e29', 1600],
+    ['le-petit-bistro', 'French Specialties', 'Demo · Steak frites', '#2b4c7e', 2400],
+    ['taco-fiesta', 'Tacos & Antojitos', 'Demo · Birria tacos', '#d97706', 1500],
   ] as const) {
     const r = (await pool.query('SELECT id FROM restaurants WHERE slug=$1', [slug])).rows[0];
     if (!r) throw new Error('Run the development Phase 1 seed first');
@@ -25,6 +27,7 @@ try {
     const asset = await uploadImage(r.id, bytes, `Development fixture color swatch for ${slug}`);
     d.settings.description = 'DEVELOPMENT FIXTURE · Demonstration restaurant content only.';
     d.settings.cover = asset.id;
+    d.settings.serviceModes = ['dine_in', 'takeaway'];
     d.settings.hours.week = Array.from({ length: 7 }, () => [{ start: 660, end: 1380 }]);
     const categoryId = randomUUID();
     d.categories = [
@@ -63,7 +66,7 @@ try {
       },
     ];
     d.theme.story = `DEVELOPMENT FIXTURE · ${slug} demonstration story.`;
-    d.theme.color = slug === 'bella-italia' ? 'forest' : 'terracotta';
+    d.theme.color = slug === 'bella-italia' ? 'forest' : slug === 'le-petit-bistro' ? 'navy' : 'terracotta';
     await saveDraft(r.id, saved.version, d);
   }
   console.log('Phase 2 development drafts saved; no websites were published.');
