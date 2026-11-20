@@ -106,8 +106,8 @@ export const reservationStates = [
 export const orderTransitions: Record<string, string[]> = {
   PENDING: ['CONFIRMED', 'REJECTED', 'CANCELLED', 'EXPIRED'],
   CONFIRMED: ['PREPARING', 'CANCELLED'],
-  PREPARING: ['READY'],
-  READY: ['COMPLETED'],
+  PREPARING: ['READY','CANCELLED'],
+  READY: ['COMPLETED','CANCELLED'],
 };
 export function checkoutAmounts(subtotal: number, taxBps: number, serviceCharge: number) {
   const tax = Number((BigInt(subtotal) * BigInt(taxBps) + 5000n) / 10000n);
