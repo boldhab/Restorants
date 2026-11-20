@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { NavigationBar, NavigationLink } from '../navigation/navigation-bar';
 import { useSession } from '../session';
 export function RestaurantSelection() {
   const { session, loading, error, logout } = useSession();
@@ -19,21 +20,16 @@ export function RestaurantSelection() {
     );
   return (
     <main className="selection">
-      <header>
-        <Link className="wordmark" href="/">
-          zayqora<span>✳</span>
-        </Link>
-        <button onClick={() => logout().catch((e) => alert(e.message))}>Sign out</button>
-      </header>
-      <nav>
-        <Link href="/customer/history">Your customer history</Link>
+      <NavigationBar
+        className="selection-navigation"
+        context="Your workspaces"
+        actions={<button onClick={() => logout().catch((e) => alert(e.message))}>Sign out</button>}
+      >
+        <NavigationLink href="/customer/history">Your customer history</NavigationLink>
         {session.user.is_platform_admin && (
-          <>
-            {' '}
-            · <Link href="/platform">Platform controls</Link>
-          </>
+          <NavigationLink href="/platform">Platform controls</NavigationLink>
         )}
-      </nav>
+      </NavigationBar>
       <p className="eyebrow">YOUR RESTAURANTS</p>
       <h1>
         A place for every

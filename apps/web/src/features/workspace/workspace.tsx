@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { api, ApiError, type Restaurant } from '../../lib/api-client';
 import { useSession } from '../session';
 import { RestaurantForm } from '../restaurants/restaurant-form';
@@ -15,6 +15,9 @@ export function Workspace({
 }) {
   const { session, loading, logout } = useSession();
   const router = useRouter();
+  const [navigationOpen, setNavigationOpen] = useState(false);
+  const navigationId = useId();
+  const navigationToggle = useRef<HTMLButtonElement>(null);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState('');
   const [branches, setBranches] = useState<{ id: string; name: string; address: string }[]>([]);
@@ -64,9 +67,20 @@ export function Workspace({
   return (
     <div className="workspace">
       <aside className="sidebar">
-        <Link href="/restaurants" className="wordmark">
-          zayqora<span>✳</span>
-        </Link>
+        <div className="sidebar-heading">
+          <Link href="/restaurants" className="wordmark">
+            zayqora<span aria-hidden="true">✳</span>
+          </Link>
+          <button
+            ref={navigationToggle}
+            className="workspace-nav-toggle"
+            aria-expanded={navigationOpen}
+            aria-controls={navigationId}
+            onClick={() => setNavigationOpen(!navigationOpen)}
+          >
+            Workspace menu
+          </button>
+        </div>
         <p className="eyebrow">YOUR WORKSPACE</p>
         <label className="switch-label">
           Restaurant
@@ -82,24 +96,71 @@ export function Workspace({
             ))}
           </select>
         </label>
-        <nav>
-          <Link href={`/workspace/${restaurantId}/operations`}>Orders, reservations & reports</Link>
-          <Link className={!settings ? 'active' : ''} href={`/workspace/${restaurantId}/dashboard`}>
-            ◫ &nbsp; Overview
-          </Link>
-          {permissions.includes('restaurant:update') && (
-            <Link className={settings ? 'active' : ''} href={`/workspace/${restaurantId}/settings`}>
-              ⚙ &nbsp; Restaurant settings
+        <div
+          className="workspace-navigation-panel"
+          id={navigationId}
+          data-open={navigationOpen}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setNavigationOpen(false);
+              navigationToggle.current?.focus();
+            }
+          }}
+        >
+          <nav aria-label="Workspace navigation">
+            <Link href={`/operations/${restaurantId}/settings`}>
+              <span className="nav-icon" aria-hidden="true">
+                ▦
+              </span>
+              <span>Daily operations setup & screens</span>
             </Link>
-          )}
-          <Link href={`/workspace/${restaurantId}/website`}>✧ &nbsp; Menu & website</Link>
-          <Link href="/restaurants">↔ &nbsp; All restaurants</Link>
-        </nav>
-        <div className="sidebar-bottom">
-          <span className="avatar">{session.user.full_name[0]}</span>
-          <strong>{session.user.full_name}</strong>
-          <small>{session.user.email}</small>
-          <button onClick={() => logout().catch((e) => setError(e.message))}>Sign out ↗</button>
+            <Link href={`/workspace/${restaurantId}/operations`}>
+              <span className="nav-icon" aria-hidden="true">
+                ▤
+              </span>
+              <span>Orders, reservations & reports</span>
+            </Link>
+            <Link
+              aria-current={!settings ? 'page' : undefined}
+              className={!settings ? 'active' : ''}
+              href={`/workspace/${restaurantId}/dashboard`}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                ◫
+              </span>
+              <span>Overview</span>
+            </Link>
+            {permissions.includes('restaurant:update') && (
+              <Link
+                aria-current={settings ? 'page' : undefined}
+                className={settings ? 'active' : ''}
+                href={`/workspace/${restaurantId}/settings`}
+              >
+                <span className="nav-icon" aria-hidden="true">
+                  ⚙
+                </span>
+                <span>Restaurant settings</span>
+              </Link>
+            )}
+            <Link href={`/workspace/${restaurantId}/website`}>
+              <span className="nav-icon" aria-hidden="true">
+                ✧
+              </span>
+              <span>Menu & website</span>
+            </Link>
+            <Link href="/restaurants">
+              <span className="nav-icon" aria-hidden="true">
+                ↔
+              </span>
+              <span>All restaurants</span>
+            </Link>
+          </nav>
+          <div className="sidebar-bottom">
+            <span className="avatar">{session.user.full_name[0]}</span>
+            <strong>{session.user.full_name}</strong>
+            <small>{session.user.email}</small>
+            <button onClick={() => logout().catch((e) => setError(e.message))}>Sign out ↗</button>
+          </div>
         </div>
       </aside>
       <div className="workspace-body">
@@ -107,7 +168,7 @@ export function Workspace({
           <span>
             {r.name} <span className="breadcrumb">/ {settings ? 'Settings' : 'Overview'}</span>
           </span>
-          <span className="status">
+          <span className="status" data-status={r.status}>
             <i /> {r.status === 'onboarding' ? 'Onboarding' : r.status}
           </span>
         </header>
