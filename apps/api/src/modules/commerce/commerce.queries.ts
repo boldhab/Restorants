@@ -1,7 +1,6 @@
 // Parameterized PostgreSQL persistence for the commerce module.
 export const commerceQueries = {
-  selectOrders:
-    'SELECT * FROM orders WHERE restaurant_id=$1 AND (user_id=$2 OR (user_id IS NULL AND session_id=$3)) ORDER BY created_at DESC LIMIT 100',
+  selectOrders: `SELECT * FROM orders WHERE restaurant_id=$1 AND (user_id=$2 OR (user_id IS NULL AND session_id=$3 AND COALESCE(snapshot->>'channel','online')<>'pos')) ORDER BY created_at DESC LIMIT 100`,
   updatePaymentAttempts:
     "UPDATE payment_attempts SET reconcile_after=now() WHERE restaurant_id=$1 AND order_id=$2 AND status NOT IN('PAID','FAILED')",
   selectInAppNotifications:
@@ -47,8 +46,7 @@ export const commerceQueries = {
     "INSERT INTO payment_attempts(restaurant_id,order_id,provider,merchant,provider_reference) VALUES($1,$2,'test',$1::uuid::text,$3)",
   insertCheckoutOperations:
     'INSERT INTO checkout_operations(restaurant_id,session_id,scope,key,fingerprint,result) VALUES($1,$2,$3,$4,$5,$6)',
-  selectOrders3:
-    'SELECT * FROM orders WHERE restaurant_id=$1 AND id=$2 AND (user_id=$3 OR (user_id IS NULL AND session_id=$4))',
+  selectOrders3: `SELECT * FROM orders WHERE restaurant_id=$1 AND id=$2 AND (user_id=$3 OR (user_id IS NULL AND session_id=$4 AND COALESCE(snapshot->>'channel','online')<>'pos'))`,
   selectOrderHistory:
     'SELECT status,created_at FROM order_history WHERE restaurant_id=$1 AND order_id=$2 ORDER BY id',
   selectRefundRequests:
@@ -63,8 +61,7 @@ export const commerceQueries = {
     "SELECT COALESCE(sum(amount),0) AS n FROM refund_requests WHERE restaurant_id=$1 AND order_id=$2 AND status<>'FAILED'",
   selectOrders4: 'SELECT * FROM orders WHERE restaurant_id=$1 AND id=$2 FOR UPDATE',
   updateOrders2: 'UPDATE orders SET preparation_minutes=$3 WHERE restaurant_id=$1 AND id=$2',
-  selectOrders5:
-    'SELECT * FROM orders WHERE restaurant_id=$1 AND id=$2 AND (user_id=$3 OR (user_id IS NULL AND session_id=$4)) FOR UPDATE',
+  selectOrders5: `SELECT * FROM orders WHERE restaurant_id=$1 AND id=$2 AND (user_id=$3 OR (user_id IS NULL AND session_id=$4 AND COALESCE(snapshot->>'channel','online')<>'pos')) FOR UPDATE`,
   updateOrders3: 'UPDATE orders SET cancellation_requested=true,version=version+1 WHERE id=$1',
   insertPaymentTransactions:
     'INSERT INTO payment_transactions(restaurant_id,order_id,provider_reference,amount,currency) VALUES($1,$2,$3,$4,$5)',
