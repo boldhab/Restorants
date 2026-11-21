@@ -39,13 +39,30 @@ export function errorHandler(
   if (err instanceof URIError)
     err = new AppError('Invalid encoded image description', 400, 'VALIDATION_ERROR');
   if (err.name === 'ZodError')
-    err = new AppError('Invalid resource identifier', 400, 'VALIDATION_ERROR');
+    err = new AppError(
+      'Validation failed',
+      400,
+      'VALIDATION_ERROR',
+      err.issues?.map((issue: any) => ({ field: issue.path.join('.'), message: issue.message }))
+    );
   if (err.code === '23514')
-    err = new AppError('Currency cannot change after menu prices exist', 409, 'CONFLICT');
+    err = new AppError(
+      err.message === 'Currency cannot change after menu prices exist'
+        ? err.message
+        : 'The change violates a data integrity rule',
+      409,
+      'CONFLICT'
+    );
+  if (err.code === '23503')
+    err = new AppError(
+      'Referenced record is unavailable in this restaurant or branch',
+      400,
+      'VALIDATION_ERROR'
+    );
   if (err.code === '23505')
     err = new AppError('A record with these details already exists', 409, 'CONFLICT');
   if (err.code === '22P02')
-    err = new AppError('Invalid resource identifier', 400, 'VALIDATION_ERROR');
+    err = new AppError('Invalid resource identifier or value', 400, 'VALIDATION_ERROR');
 
   // Handle AppError
   if (err instanceof AppError) {

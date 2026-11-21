@@ -136,7 +136,7 @@ export function AuthScreen({ mode }: { mode: Mode }) {
               </p>
             )}
             {message && (
-              <p role="status" className="notice">
+              <p role="status" className="notice success">
                 {message}
               </p>
             )}

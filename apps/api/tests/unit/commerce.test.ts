@@ -20,6 +20,20 @@ test('integer checkout rounding is deterministic across currency precisions', ()
 });
 test('business settings and cart payloads reject unsafe limits and authoritative price fields', () => {
   assert.equal(
+    commerceSettingsSchema.safeParse({
+      ...defaultCommerceSettings,
+      blackouts: [{ start: '2026-12-01T10:00:00+03:00', end: '2026-12-01T08:00:00Z' }],
+    }).success,
+    true
+  );
+  assert.equal(
+    commerceSettingsSchema.safeParse({
+      ...defaultCommerceSettings,
+      blackouts: [{ start: '2026-12-01T08:00:00Z', end: '2026-12-01T10:00:00+03:00' }],
+    }).success,
+    false
+  );
+  assert.equal(
     commerceSettingsSchema.safeParse({ ...defaultCommerceSettings, capacity: 2, maxParty: 8 })
       .success,
     false

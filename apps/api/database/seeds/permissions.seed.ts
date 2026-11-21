@@ -1,6 +1,7 @@
-import { PermissionCode } from '@zayqora/contracts';
+import { PermissionCode, operationalPermissions } from '@zayqora/contracts';
 
 export const permissionsData = [
+ ...operationalPermissions.map(code=>({code,description:code,module:'operations'})),
   ...['orders:read','orders:process','orders:cancel','payments:manage','reservations:manage','reports:read'].map(code=>({code,description:code,module:code.split(':')[0]})),
   {
     code: PermissionCode.RESTAURANT_READ,

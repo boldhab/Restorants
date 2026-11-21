@@ -45,7 +45,7 @@ export async function guestSession(req: Request, res: Response, next: NextFuncti
       )
         throw new CsrfError('Invalid guest CSRF token');
     }
-    scopes.set(req, { restaurantId: id, sessionId: session.id, userId: req.user?.id });
+    scopes.set(req, { restaurantId: id, sessionId: session.id, userId: req.user?.id, tableToken: req.signedCookies?.['zq_table_'+id.replaceAll('-','')] });
     res.locals.guestCsrf = csrf;
     res.setHeader('Referrer-Policy', 'no-referrer');
     next();

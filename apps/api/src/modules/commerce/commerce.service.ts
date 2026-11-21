@@ -1,10 +1,14 @@
+import { access as operationalAccess } from '../operations/access.service.js';
+import { q as opQuery } from '../operations/operations.repository.js';
+import { validateOrderContext } from '../operations/order-context.service.js';
+import { operationalPricing, reserveCoupon } from '../operations/pricing.service.js';
+import { orderEffect } from '../operations/kitchen.service.js';
 import { commerceRepository as repo } from './commerce.repository.js';
 import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import {
   defaultCommerceSettings,
   configurationPrice,
-  checkoutAmounts,
   isOpen,
   orderTransitions,
   type CommerceSettings,
@@ -21,7 +25,12 @@ import {
   ValidationError,
 } from '../../shared/errors/app-error.js';
 import { hashPayload } from '../../shared/security/tokens.js';
-export type Scope = { restaurantId: string; sessionId: string; userId?: string };
+export type Scope = {
+  restaurantId: string;
+  sessionId: string;
+  userId?: string;
+  tableToken?: string;
+};
 export async function business(c: PoolClient, id: string, feature?: 'ordering' | 'reservations') {
   const r = (await repo.execute(c, 'selectRestaurants', [id])).rows[0];
   if (!r) throw new NotFoundError('Restaurant not found');
@@ -84,7 +93,13 @@ export async function cart(c: PoolClient, scope: Scope, b: any, create = true) {
     ])
   ).rows[0];
 }
-function priceLine(line: CartLine, b: any, availability: any[], now = new Date()) {
+function priceLine(
+  line: CartLine,
+  b: any,
+  availability: any[],
+  now = new Date(),
+  mode = 'takeaway'
+) {
   const item = (b.content as Draft).items.find((i) => i.id === line.itemId);
   if (!item) throw new ValidationError('This item is no longer on the published menu');
   const a = availability.find((a) => a.item_id === item.id)?.content;
@@ -92,11 +107,11 @@ function priceLine(line: CartLine, b: any, availability: any[], now = new Date()
     a &&
     (a.soldOut ||
       !a.enabled ||
-      !a.serviceModes.includes('takeaway') ||
+      !a.serviceModes.includes(mode as any) ||
       (a.hours && !isOpen(a.hours, b.content.settings.timezone, now)))
   )
     throw new ValidationError(`${item.name} is unavailable for pickup`);
-  if (!b.content.settings.serviceModes.includes('takeaway'))
+  if (!b.content.settings.serviceModes.includes(mode as any))
     throw new ValidationError('Pickup is not enabled on the published menu');
   let unit: number;
   try {
@@ -109,6 +124,7 @@ function priceLine(line: CartLine, b: any, availability: any[], now = new Date()
     id: line.id ?? randomUUID(),
     itemId: item.id,
     name: item.name,
+    allergens: item.allergens,
     revision: b.revision,
     variant: item.variants.find((v) => v.id === line.variantId) ?? null,
     modifiers: item.modifiers.flatMap((g) =>
@@ -158,7 +174,17 @@ export async function getCart(scope: Scope) {
       ...row,
       issues: row.lines.flatMap((l: any) => {
         try {
-          const p = priceLine(l, b, a);
+          const p = priceLine(
+            l,
+            b,
+            a,
+            new Date(),
+            row.operational_context?.mode === 'dine_in'
+              ? 'dine_in'
+              : row.operational_context?.mode === 'delivery'
+                ? 'delivery'
+                : 'takeaway'
+          );
           return l.revision !== b.revision || l.unit !== p.unit
             ? [{ id: l.id, message: 'Menu changed. Refresh your checkout quote.' }]
             : [];
@@ -184,7 +210,14 @@ export async function mutateCart(
     if (clear) lines = [];
     else if (removeId) lines = lines.filter((l) => l.id !== removeId);
     else if (line) {
-      const p = priceLine(line, b, await availability(c, scope.restaurantId));
+      const ctx = await validateOrderContext(c, scope, b, row.operational_context);
+      const p = priceLine(
+        line,
+        b,
+        await availability(c, scope.restaurantId),
+        new Date(),
+        ctx.mode === 'pickup' ? 'takeaway' : ctx.mode === 'dine_in' ? 'dine_in' : 'delivery'
+      );
       if (line.id && !lines.some((l) => l.id === line.id))
         throw new NotFoundError('Cart item not found');
       lines = line.id ? lines.map((l) => (l.id === line.id ? p : l)) : [...lines, p];
@@ -205,20 +238,26 @@ async function quoteFor(c: PoolClient, scope: Scope, row: any, b: any) {
     )
   )
     throw new ConflictError('Restaurant is closed or too close to closing for immediate pickup');
+  const context = await validateOrderContext(c, scope, b, row.operational_context);
   const a = await availability(c, scope.restaurantId),
-    lines = row.lines.map((l: CartLine) => priceLine(l, b, a, now));
-  const amounts = checkoutAmounts(
-    lines.reduce((sum: number, l: any) => sum + l.lineTotal, 0),
-    b.settings.taxBps,
-    b.settings.serviceCharge
-  );
+    lines = row.lines.map((l: CartLine) =>
+      priceLine(
+        l,
+        b,
+        a,
+        now,
+        context.mode === 'pickup' ? 'takeaway' : context.mode === 'dine_in' ? 'dine_in' : 'delivery'
+      )
+    );
+  const amounts = await operationalPricing(c, b, scope, lines, context);
   if (amounts.subtotal < b.settings.minimum)
     throw new ValidationError('Cart is below the minimum order amount');
   const content = {
+    ...context,
     ...amounts,
     lines,
     currency: b.content.settings.currency,
-    fulfillment: 'pickup',
+    fulfillment: context.mode,
     restaurantName: b.content.settings.name,
     pickupAddress: b.content.settings.address,
     pickupPhone: b.content.settings.phone,
@@ -259,6 +298,17 @@ export async function submitOrder(scope: Scope, key: string, input: any, test = 
     if (previous) {
       if (previous.fingerprint !== hashPayload(input))
         throw new ConflictError('Idempotency key was used with another payload');
+      const original = (await opQuery(c, 'order', [scope.restaurantId, previous.result.id]))[0];
+      if (original?.snapshot.channel === 'pos') {
+        if (!scope.userId) throw new ForbiddenError('Staff access required');
+        await operationalAccess(
+          c,
+          scope.restaurantId,
+          original.branch_id,
+          scope.userId,
+          'pos.create'
+        );
+      }
       return previous.result;
     }
     // Re-read under the same restaurant lock; the durable retry path works even when suspended.
@@ -284,6 +334,10 @@ export async function submitOrder(scope: Scope, key: string, input: any, test = 
     const check = await quoteFor(c, scope, row, b);
     if (hashPayload(check.content) !== hashPayload(q.content))
       return { conflict: true, quote: check };
+    if (q.content.fulfillment === 'delivery' && input.method === 'pay_at_pickup')
+      throw new ValidationError(
+        'Delivery requires a configured prepaid provider; cash on delivery is disabled'
+      );
     if (input.method === 'pay_at_pickup' && !b.settings.payAtPickup)
       throw new ValidationError('Pay at pickup is disabled');
     if (input.method === 'test_online' && !test)
@@ -295,7 +349,7 @@ export async function submitOrder(scope: Scope, key: string, input: any, test = 
         row.id,
         q.id,
         scope.sessionId,
-        scope.userId ?? null,
+        q.content.channel === 'pos' ? (q.content.customerId ?? null) : (scope.userId ?? null),
         'ZQ-' + randomUUID().slice(0, 8).toUpperCase(),
         input.method === 'pay_at_pickup' ? 'UNPAID' : 'PENDING',
         input.method,
@@ -306,6 +360,14 @@ export async function submitOrder(scope: Scope, key: string, input: any, test = 
         b.settings.leadMinutes,
       ])
     ).rows[0];
+    await reserveCoupon(c, order);
+    if (q.content.serviceSessionId)
+      await opQuery(c, 'sessionOrder', [
+        scope.restaurantId,
+        b.branch_id,
+        q.content.serviceSessionId,
+        order.id,
+      ]);
     for (const line of q.content.lines)
       await repo.execute(c, 'insertOrderItems', [scope.restaurantId, order.id, line]);
     await repo.execute(c, 'updateCarts2', [row.id, scope.userId ?? null]);
@@ -321,10 +383,12 @@ export async function submitOrder(scope: Scope, key: string, input: any, test = 
       sessionId: scope.sessionId,
       userId: scope.userId,
     });
+    if (q.content.channel === 'pos')
+      await transition(c, order, 'CONFIRMED', scope.userId ?? null, 'POS submission accepted');
     const response = {
       id: order.id,
       reference: order.reference,
-      status: order.status,
+      status: q.content.channel === 'pos' ? 'CONFIRMED' : order.status,
       paymentStatus: order.payment_status,
     };
     await repo.execute(c, 'insertCheckoutOperations', [
@@ -377,6 +441,7 @@ export async function customerOrder(scope: Scope, id: string) {
   if (!o) throw new NotFoundError('Order not found');
   return {
     ...safeOrder(o),
+    delivery: (await opQuery(pool, 'deliverySafe', [scope.restaurantId, id]))[0] ?? null,
     history: (await repo.execute(pool, 'selectOrderHistory', [scope.restaurantId, id])).rows,
     refunds: (await repo.execute(pool, 'selectRefundRequests', [scope.restaurantId, id])).rows,
   };
@@ -404,6 +469,7 @@ export async function transition(
       (await repo.execute(c, 'selectRefundRequests2', [o.restaurant_id, o.id])).rowCount)
   )
     throw new ConflictError('Resolve payment and refunds before completion');
+  await orderEffect(c, o, status, reason);
   const updated = (await repo.execute(c, 'updateOrders', [o.restaurant_id, o.id, status])).rows[0];
   await repo.execute(c, 'insertOrderHistory2', [o.restaurant_id, o.id, status, actorId, reason]);
   await event(c, o.restaurant_id, 'order.' + status.toLowerCase(), o.id, o.contact, {
@@ -494,6 +560,8 @@ export async function collect(id: string, orderId: string, version: number, acto
       !['CONFIRMED', 'PREPARING', 'READY'].includes(o.status)
     )
       throw new ConflictError('Collection is not permitted');
+    if ((await opQuery(c, 'settingsGet', [id]))[0]?.content.cash)
+      throw new ConflictError('Use an open cash session to record cash collection');
     await repo.execute(c, 'insertPaymentTransactions', [
       id,
       orderId,
@@ -554,6 +622,8 @@ export async function confirmPickupRefund(id: string, refundId: string, actor: s
     if (!r) throw new NotFoundError('Refund not found');
     if (r.method !== 'pay_at_pickup' || r.status !== 'PENDING')
       throw new ConflictError('Only pending pickup refunds can be recorded manually');
+    if ((await opQuery(c, 'cashOrder', [id, r.order_id])).length)
+      throw new ConflictError('Disburse this refund through an open cash session');
     await repo.execute(c, 'updateRefundRequests', [refundId]);
     await repo.execute(c, 'insertAuditLogs3', [actor, id, refundId]);
     await event(c, id, 'refund.confirmed', refundId, r.contact, { orderId: r.order_id });
@@ -587,5 +657,14 @@ export async function resolveCancellation(
     ]);
     await event(c, id, 'order.cancellation_declined', orderId, o.contact, { orderId });
     return { declined: true };
+  });
+}
+
+export async function setOrderContext(scope: Scope, input: unknown) {
+  return withTransaction(async (c) => {
+    const b = await business(c, scope.restaurantId, 'ordering');
+    const row = await cart(c, scope, b);
+    const context = await validateOrderContext(c, scope, b, input);
+    return (await opQuery(c, 'contextSave', [row.id, context]))[0];
   });
 }

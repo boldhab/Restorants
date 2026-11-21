@@ -1,4 +1,4 @@
-import { RoleCode, PermissionCode } from '@zayqora/contracts';
+import { RoleCode, PermissionCode, operationalRolePermissions } from '@zayqora/contracts';
 
 export const systemRoles = [
   {
@@ -37,7 +37,9 @@ export const systemRoles = [
 ];
 
 export async function seedRoles(client: import('pg').PoolClient) {
-  for (const role of systemRoles) {
+  const combined=systemRoles.map(r=>({...r,permissions:[...r.permissions,...(operationalRolePermissions[r.name]??[])]}));
+  for(const [name,permissions] of Object.entries(operationalRolePermissions))if(!combined.some(r=>r.name===name))combined.push({name:name as any,description:name,permissions});
+  for (const role of combined) {
     // Upsert role
     const res = await client.query(
       `SELECT id FROM roles WHERE name = $1 AND restaurant_id IS NULL`,

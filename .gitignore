@@ -26,3 +26,6 @@ zayqora
 **/next-env.d.ts
 
 **/.next-e2e-production/
+
+# Local before/after UI verification artifacts
+artifacts/ember-theme/

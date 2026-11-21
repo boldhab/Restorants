@@ -72,7 +72,11 @@ function HoursEditor({ value, onChange }: { value: Hours; onChange: (value: Hour
                 update(list.map((x, k) => (k === n ? { ...x, end: minutes(v) } : x)))
               }
             />
-            <button type="button" onClick={() => update(list.filter((_, k) => k !== n))}>
+            <button
+              className="button-danger"
+              type="button"
+              onClick={() => update(list.filter((_, k) => k !== n))}
+            >
               Remove interval
             </button>
           </div>
@@ -130,6 +134,7 @@ function HoursEditor({ value, onChange }: { value: Hours; onChange: (value: Hour
             })
           )}
           <button
+            className="button-danger"
             type="button"
             onClick={() =>
               onChange({ ...value, exceptions: value.exceptions.filter((_, k) => k !== n) })
@@ -162,6 +167,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState('Profile');
   const [message, setMessage] = useState('');
+  const [feedback, setFeedback] = useState('info');
   const [busy, setBusy] = useState(false);
   const [viewport, setViewport] = useState('100%');
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -182,7 +188,10 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
           setDraft(r.draft);
         }
       })
-      .catch((e) => setMessage(e.message));
+      .catch((e) => {
+        setFeedback('error');
+        setMessage(e.message);
+      });
     return () => {
       active = false;
     };
@@ -200,6 +209,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
     fn(next);
     setDraft(next);
     setDirty(true);
+    setFeedback('warning');
     setMessage('Unsaved changes');
   }
   async function save() {
@@ -212,8 +222,10 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
       });
       setData({ ...data, version: r.version, issues: r.issues, draft });
       setDirty(false);
+      setFeedback('success');
       setMessage('All changes saved');
     } catch (e) {
+      setFeedback('error');
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
@@ -228,8 +240,10 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
         body: JSON.stringify({ version: data.version }),
       });
       await load();
+      setFeedback(action === 'publish' ? 'success' : 'warning');
       setMessage(action === 'publish' ? 'Website published' : 'Website unpublished');
     } catch (e) {
+      setFeedback('error');
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
@@ -237,10 +251,12 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
   }
   async function upload(file: File) {
     if (!uploadAlt.trim()) {
+      setFeedback('error');
       setMessage('Describe the image before uploading');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
+      setFeedback('error');
       setMessage('Image exceeds 5 MB');
       return;
     }
@@ -265,13 +281,16 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
         setData((current) =>
           current ? { ...current, assets: [body, ...current.assets] } : current
         );
+        setFeedback('success');
         setMessage('Image uploaded. Attach it below, then save.');
       } catch (e) {
+        setFeedback('error');
         setMessage((e as Error).message);
       }
     };
     xhr.onerror = () => {
       setUploadProgress(null);
+      setFeedback('error');
       setMessage('Upload failed. Select the image to retry.');
     };
     xhr.send(file);
@@ -285,6 +304,18 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
       </main>
     );
   const s = draft.settings;
+  const savedSteps: Record<string, boolean> = {
+    Profile: !!(s.name && s.phone && s.email && s.address && s.timezone && s.description),
+    Hours: s.hours.week.some((day) => day.length > 0),
+    Images: !!s.cover,
+    Categories: draft.categories.some((c) => c.active),
+    Items: draft.items.some(
+      (i) => i.state === 'active' && draft.categories.some((c) => c.id === i.categoryId && c.active)
+    ),
+    Website: !!draft.theme.title,
+    Preview: data.publication?.draft_version === data.version,
+    Publish: data.publication?.draft_version === data.version,
+  };
   function asset(label: string, value: string | null, update: (id: string | null) => void) {
     return (
       <label>
@@ -316,7 +347,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
   }
   return (
     <div className="phase2-editor">
-      <header className="editor-header">
+      <header className="editor-header editor-navigation">
         <Link
           href={`/workspace/${restaurantId}/dashboard`}
           onClick={(e) => {
@@ -349,6 +380,9 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
           ].map((name, n) => (
             <button
               key={name}
+              aria-label={`${n + 1}. ${name}`}
+              data-complete={!dirty && savedSteps[name]}
+              aria-describedby={`step-${name}-status`}
               aria-current={tab === name ? 'step' : undefined}
               onClick={async () => {
                 if (name === 'Preview') {
@@ -356,6 +390,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                     const saved = await api<EditorData>(`${base}/website/preview`);
                     setData(saved);
                   } catch (e) {
+                    setFeedback('error');
                     setMessage((e as Error).message);
                     return;
                   }
@@ -364,19 +399,30 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
               }}
             >
               {n + 1}. {name}
+              {!dirty && savedSteps[name] && (
+                <span className="step-check" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+              <span id={`step-${name}-status`} className="step-description">
+                {!dirty && savedSteps[name] ? 'Saved configuration complete' : 'Setup to review'}
+              </span>
             </button>
           ))}
         </nav>
-        <div className="save-bar">
+        <div className="save-bar" data-tone={dirty ? 'warning' : feedback}>
           <span role="status">{message || (dirty ? 'Unsaved changes' : 'Saved draft loaded')}</span>
-          <button disabled={busy || !dirty} onClick={save}>
+          <button className="button-primary" disabled={busy || !dirty} onClick={save}>
             {busy ? 'Working…' : 'Save changes'}
           </button>
           <button
             disabled={busy}
             onClick={() => {
               if (!dirty || window.confirm('Discard unsaved changes and reload?'))
-                load().catch((e) => setMessage(e.message));
+                load().catch((e) => {
+                  setFeedback('error');
+                  setMessage(e.message);
+                });
             }}
           >
             Reload saved draft
@@ -533,6 +579,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                     Gallery
                   </label>
                   <button
+                    className="button-danger"
                     onClick={async () => {
                       if (!window.confirm('Delete this unused image?')) return;
                       try {
@@ -540,6 +587,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                         setData({ ...data, assets: data.assets.filter((x) => x.id !== a.id) });
                         setMessage('Image deleted');
                       } catch (e) {
+                        setFeedback('error');
                         setMessage((e as Error).message);
                       }
                     }}
@@ -610,6 +658,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                   Move down
                 </button>
                 <button
+                  className="button-danger"
                   onClick={() => {
                     if (
                       c.active &&
@@ -800,6 +849,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                       Move down
                     </button>
                     <button
+                      className="button-danger"
                       onClick={() =>
                         itemEdit(item.id, (i) => {
                           i.variants.splice(n, 1);
@@ -902,6 +952,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                           Move option down
                         </button>
                         <button
+                          className="button-danger"
                           onClick={() =>
                             itemEdit(item.id, (i) => {
                               i.modifiers[n].options.splice(k, 1);
@@ -933,6 +984,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
                       Move group down
                     </button>
                     <button
+                      className="button-danger"
                       onClick={() =>
                         itemEdit(item.id, (i) => {
                           i.modifiers.splice(n, 1);
@@ -1134,7 +1186,7 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
             </p>
             <h3>Publishing readiness</h3>
             {data.issues.length ? (
-              <ul>
+              <ul className="validation-errors">
                 {data.issues.map((issue) => (
                   <li key={issue}>{issue}</li>
                 ))}
@@ -1143,12 +1195,14 @@ export function WebsiteEditor({ restaurantId }: { restaurantId: string }) {
               <p>All required profile, hours, imagery and menu details are saved.</p>
             )}
             <button
+              className="button-primary"
               disabled={busy || dirty || !!data.issues.length}
               onClick={() => publish('publish')}
             >
               Publish saved draft
             </button>
             <button
+              className="button-danger"
               disabled={busy || !data.publication || dirty}
               onClick={() => {
                 if (

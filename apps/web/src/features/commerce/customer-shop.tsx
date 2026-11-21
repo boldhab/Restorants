@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import { NavigationBar, NavigationLink } from '../navigation/navigation-bar';
+import { VerifiedReview, PublicReviews } from '../operations/verified-review';
 import { useEffect, useState, useRef } from 'react';
 import { commerce, money } from '../../lib/commerce-client';
 import { api, ApiError } from '../../lib/api-client';
@@ -15,12 +17,14 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
     [slots, setSlots] = useState<any[]>([]),
     [contact, setContact] = useState(contactEmpty),
     [message, setMessage] = useState(''),
+    [feedback, setFeedback] = useState('info'),
     [busy, setBusy] = useState(false),
     [party, setParty] = useState(2),
     [date, setDate] = useState(new Date(Date.now() + 86400000).toISOString().slice(0, 10)),
     [slot, setSlot] = useState(''),
     [profile, setProfile] = useState<any>(null),
-    [addresses, setAddresses] = useState('');
+    [addresses, setAddresses] = useState(''),
+    [coupon, setCoupon] = useState('');
   const [menu, setMenu] = useState<any>(null);
   const key = useRef('');
   const [uncertain, setUncertain] = useState(false);
@@ -52,17 +56,29 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
     if (mode === 'reservations') setBookings(await commerce(id, '/reservations'));
   }
   useEffect(() => {
-    load().catch((e) => setMessage(e.message));
+    load().catch((e) => {
+      setFeedback('error');
+      setMessage(e.message);
+    });
     if (['orders', 'history', 'reservations'].includes(mode)) {
-      const timer = setInterval(() => load().catch((e) => setMessage(e.message)), 5000);
+      const timer = setInterval(
+        () =>
+          load().catch((e) => {
+            setFeedback('error');
+            setMessage(e.message);
+          }),
+        5000
+      );
       return () => clearInterval(timer);
     }
   }, [id, mode, page[1]]); // Refetch after interruptions; records remain authoritative.
   async function action(fn: () => Promise<void>) {
     setBusy(true);
     setMessage('');
+    setFeedback('info');
     try {
       await fn();
+      setFeedback('success');
     } catch (e) {
       if (e instanceof ApiError && e.code === 'QUOTE_CHANGED') {
         const replacement = (e.details as any)?.quote;
@@ -73,6 +89,7 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
           setUncertain(false);
         }
       }
+      setFeedback('error');
       setMessage((e as Error).message);
     } finally {
       setBusy(false);
@@ -103,15 +120,20 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
   );
   return (
     <main className="commerce-page">
-      <header>
-        <Link href="/">ZAYQORA</Link>
-        <strong>{session?.name || 'Your restaurant visit'}</strong>
-        <Link href={`/shop/${id}/cart`}>Cart</Link>
-        {session?.ordering && <Link href={`/shop/${id}/checkout`}>Checkout</Link>}
-        <Link href={`/shop/${id}/history`}>Your orders</Link>
-        <Link href={`/shop/${id}/reservations`}>Reservations</Link>
-        <Link href={`/shop/${id}/profile`}>Customer settings</Link>
-      </header>
+      <NavigationBar
+        className="app-navigation customer-navigation"
+        context={session?.name || 'Your restaurant visit'}
+        label="Customer navigation"
+      >
+        <NavigationLink href={`/shop/${id}/cart`}>Cart</NavigationLink>
+        {session?.ordering && (
+          <NavigationLink href={`/shop/${id}/checkout`}>Checkout</NavigationLink>
+        )}
+        <NavigationLink href={`/shop/${id}/history`}>Your orders</NavigationLink>
+        <NavigationLink href={`/shop/${id}/reservations`}>Reservations</NavigationLink>
+        <NavigationLink href={`/shop/${id}/reviews`}>Verified reviews</NavigationLink>
+        <NavigationLink href={`/shop/${id}/profile`}>Customer settings</NavigationLink>
+      </NavigationBar>
       <p className="eyebrow">YOUR TABLE · YOUR TIME</p>
       <h1>
         {mode === 'orders'
@@ -124,7 +146,10 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
                 ? 'Your order history'
                 : 'Your pickup cart'}
       </h1>
-      <p role="status" className={message ? 'notice' : undefined}>
+      {mode === 'reviews' && <PublicReviews restaurantId={id} />}
+      {order?.status === 'COMPLETED' && <VerifiedReview restaurantId={id} orderId={order.id} />}
+      {order?.delivery && <p>Delivery: {order.delivery.state.replaceAll('_', ' ')}</p>}
+      <p role="status" data-tone={feedback} className={message ? 'notice' : undefined}>
         {message}
       </p>
       {uncertain && (
@@ -147,6 +172,54 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
         >
           Recover previous checkout submission
         </button>
+      )}
+      {['cart', 'checkout'].includes(mode) && cart?.operational_context?.mode === 'dine_in' && (
+        <button
+          disabled={busy || uncertain}
+          onClick={() =>
+            action(async () => {
+              setCart(
+                await commerce(id, '/context', {
+                  method: 'POST',
+                  body: JSON.stringify({ channel: 'online', mode: 'pickup' }),
+                })
+              );
+              setQuote(null);
+              setMessage('Your cart now uses pickup service. Review a fresh quote.');
+            })
+          }
+        >
+          Switch this cart to pickup
+        </button>
+      )}
+      {['cart', 'checkout'].includes(mode) && (
+        <section className="panel">
+          <h2>Coupon</h2>
+          <label>
+            Coupon code
+            <input value={coupon} onChange={(e) => setCoupon(e.target.value)} />
+          </label>
+          <button
+            disabled={busy || uncertain}
+            onClick={() =>
+              action(async () => {
+                await commerce(id, '/context', {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    ...cart?.operational_context,
+                    coupon: coupon || undefined,
+                  }),
+                });
+                setCart(await commerce(id, '/cart'));
+                setQuote(await commerce(id, '/quotes', { method: 'POST' }));
+                key.current = crypto.randomUUID();
+                setMessage('Coupon evaluated by the restaurant pricing service.');
+              })
+            }
+          >
+            Apply coupon
+          </button>
+        </section>
       )}
       {['cart', 'checkout'].includes(mode) && (
         <section className="panel">
@@ -202,6 +275,7 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
                 />
               </label>
               <button
+                className="button-danger"
                 disabled={busy}
                 onClick={() =>
                   action(async () => {
@@ -264,6 +338,9 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
           {quote && (
             <div className="checkout-panel">
               <h2>Review your pickup order</h2>
+              {quote.content.discount > 0 && (
+                <p>Coupon discount: {money(quote.content.discount, quote.content.currency)}</p>
+              )}
               <p>
                 Pickup at {quote.content.pickupAddress} · {quote.content.pickupPhone}
               </p>
@@ -302,6 +379,7 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
                 requests; cancellation is unavailable once preparation starts.
               </p>
               <button
+                className="button-primary"
                 disabled={busy || !session.payAtPickup}
                 onClick={() =>
                   action(async () => {
@@ -553,6 +631,7 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
               {['PENDING', 'CONFIRMED'].includes(r.status) && (
                 <>
                   <button
+                    className="button-danger"
                     disabled={busy}
                     onClick={() =>
                       action(async () => {
@@ -648,6 +727,7 @@ export function CustomerShop({ restaurantId: id, page }: { restaurantId: string;
                 Explicit marketing consent (marketing is not sent in this phase)
               </label>
               <button
+                className="button-primary"
                 onClick={() =>
                   action(async () => {
                     await commerce(id, '/profile', {

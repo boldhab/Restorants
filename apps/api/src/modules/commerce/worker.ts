@@ -1,3 +1,4 @@
+import {exportWorkerOnce} from '../operations/exports.service.js';
 import { commerceRepository as repo } from './commerce.repository.js';
 import { randomUUID } from 'node:crypto';
 import { pool } from '../../database/pool.js';
@@ -32,7 +33,7 @@ export async function runOutboxOnce(send = emailService.sendEmail.bind(emailServ
         await send({
           to: p.contact.email,
           subject: 'ZAYQORA · ' + e.kind.replaceAll('.', ' '),
-          text: `Update: ${e.kind}. Open your ZAYQORA customer history in the same browser to see the current status.`,
+          text: p.invitationUrl ? `Accept your staff invitation: ${p.invitationUrl}` : p.reviewUrl ? `Review your completed order: ${p.reviewUrl}` : `Update: ${e.kind}. Open your ZAYQORA customer history in the same browser to see the current status.`,
           html: '',
         });
       await finish(e, 'SENT', null);
@@ -59,6 +60,7 @@ export async function maintenanceOnce() {
 }
 export async function workerOnce() {
   return {
+    exports: await exportWorkerOnce(),
     maintenance: await maintenanceOnce(),
     payments: await reconcilePayments(),
     notifications: await runOutboxOnce(),

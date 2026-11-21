@@ -1,3 +1,4 @@
+import {q as opQuery} from '../operations/operations.repository.js';
 import { commerceRepository as repo } from './commerce.repository.js';
 import { randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
@@ -61,6 +62,7 @@ async function check(
       exclude ?? '00000000-0000-0000-0000-000000000000',
     ])
   ).rows;
+  overlaps.push(...(await opQuery(c,'walkins',[b.id,b.branch_id])).filter(r=>new Date(r.start_at)<end&&new Date(r.end_at)>start));
   const points = overlaps
     .flatMap((r) => [
       { time: Math.max(new Date(r.start_at).getTime(), start.getTime()), delta: r.covers },
@@ -222,6 +224,7 @@ export async function updateReservation(
     };
     if (!input.status || !transitions[r.status]?.includes(input.status))
       throw new ConflictError('Invalid reservation transition');
+    if(input.status==='SEATED' && (await opQuery(c,'settingsGet',[id]))[0]?.content.tables)throw new ConflictError('Seat this reservation through a table service session');
     if (input.status === 'CONFIRMED')
       await check(c, b, new Date(r.start_at), r.party, r.id, new Date(r.end_at));
     if (

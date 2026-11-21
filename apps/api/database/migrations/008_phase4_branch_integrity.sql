@@ -1,0 +1,15 @@
+ALTER TABLE orders ADD CONSTRAINT order_branch_identity UNIQUE(restaurant_id,branch_id,id);
+ALTER TABLE reservations ADD CONSTRAINT reservation_branch_identity UNIQUE(restaurant_id,branch_id,id);
+ALTER TABLE order_items ADD CONSTRAINT order_item_tenant_identity UNIQUE(restaurant_id,id);
+ALTER TABLE kitchen_work ADD CONSTRAINT work_item_tenant FOREIGN KEY(restaurant_id,order_item_id) REFERENCES order_items(restaurant_id,id);
+ALTER TABLE stock_reservations ADD CONSTRAINT stock_item_tenant FOREIGN KEY(restaurant_id,order_item_id) REFERENCES order_items(restaurant_id,id);
+ALTER TABLE service_sessions ADD CONSTRAINT seated_reservation_branch FOREIGN KEY(restaurant_id,branch_id,reservation_id) REFERENCES reservations(restaurant_id,branch_id,id);
+ALTER TABLE kitchen_tickets ADD CONSTRAINT kitchen_tickets_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE session_orders ADD CONSTRAINT session_orders_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE cash_movements ADD CONSTRAINT cash_movements_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE delivery_assignments ADD CONSTRAINT delivery_assignments_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE stock_movements ADD CONSTRAINT stock_movements_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE stock_reservations ADD CONSTRAINT stock_reservations_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE coupon_uses ADD CONSTRAINT coupon_uses_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE verified_reviews ADD CONSTRAINT verified_reviews_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);
+ALTER TABLE review_invitations ADD CONSTRAINT review_invitations_order_branch FOREIGN KEY(restaurant_id,branch_id,order_id) REFERENCES orders(restaurant_id,branch_id,id);

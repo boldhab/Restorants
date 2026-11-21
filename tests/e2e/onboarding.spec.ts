@@ -73,6 +73,7 @@ test('registration → verification → onboarding → settings → reload → l
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true
   );
+  await page.getByRole('button', { name: 'Workspace menu', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL('/login');
   await page.goto(dashboard);
