@@ -1,3 +1,7 @@
+import { joinTable } from '../operations/tables.service.js';
+import {submitReview} from '../operations/customers-reviews.service.js';
+import {q as opQuery} from '../operations/operations.repository.js';
+import {withTransaction} from '../../database/transaction.js';
 import { commerceRepository as repo } from './commerce.repository.js';
 import { Router, raw, type RequestHandler } from 'express';
 import { z } from 'zod';
@@ -87,6 +91,15 @@ customerCommerceRouter.patch(
     )
   )
 );
+customerCommerceRouter.post('/context',h(async(req,res)=>res.json(await core.setOrderContext(scopes.get(req)!,req.body))));
+customerCommerceRouter.post('/table/join',h(async(req,res)=>{
+ const input=z.object({reference:z.string().min(40).max(100),activation:z.string().min(12).max(100)}).strict().parse(req.body);const scope=scopes.get(req)!;
+ const joined=await withTransaction(c=>joinTable(c,scope.restaurantId,scope.sessionId,input.reference,input.activation));
+ res.cookie('zq_table_'+scope.restaurantId.replaceAll('-',''),joined.token,{signed:true,httpOnly:true,secure:env.COOKIE_SECURE,sameSite:'lax',path:'/api/v1/commerce/'+scope.restaurantId,maxAge:12*3600000});res.json({...joined,token:undefined});
+}));
+customerCommerceRouter.get('/reviews',h(async(req,res)=>{const id=scopes.get(req)!.restaurantId;res.json({reviews:await opQuery(pool,'publicReviews',[id]),aggregate:(await opQuery(pool,'reviewAggregate',[id]))[0]});}));
+customerCommerceRouter.post('/orders/:orderId/review',h(async(req,res)=>{const input=z.object({rating:z.number().int().min(1).max(5),comment:z.string().trim().min(3).max(2000),token:z.string().min(40).max(100).optional()}).strict().parse(req.body);res.json(await withTransaction(c=>submitReview(c,scopes.get(req)!,uuid(req.params.orderId),input)));}));
+customerCommerceRouter.post('/reviews/:id/report',requireAuth,h(async(req,res)=>{const input=z.object({reason}).strict().parse(req.body);const id=uuid(req.params.id);const scope=scopes.get(req)!;await withTransaction(async c=>{const rows=await opQuery(c,'publicReviewGet',[scope.restaurantId,id]);if(!rows[0])throw new ValidationError('Review unavailable');await opQuery(c,'reviewReport',[scope.restaurantId,rows[0].branch_id,id,req.user!.id,input.reason]);});res.json({reported:true});}));
 customerCommerceRouter.post(
   '/quotes',
   h(async (req, res) => res.status(201).json(await core.createQuote(scopes.get(req)!)))

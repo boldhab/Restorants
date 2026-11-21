@@ -6,6 +6,7 @@ export default [
       '**/dist/**',
       '**/.next/**',
       '**/.next-e2e/**',
+      '**/.next-e2e-production/**',
       'zayqora/**',
       '**/next-env.d.ts',
     ],

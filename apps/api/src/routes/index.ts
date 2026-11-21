@@ -1,3 +1,4 @@
+import {operationalRouter,staffInvitationRouter} from '../modules/operations/operations.routes.js';
 import { customerCommerceRouter,operationsRouter,platformRouter,accountRouter } from '../modules/commerce/commerce.routes.js';
 import { publishingRouter, publicWebsiteRouter } from '../modules/publishing/publishing.routes.js';
 import { env } from '../config/env.js';
@@ -10,6 +11,8 @@ import { restaurantsRouter } from '../modules/restaurants/restaurants.routes.js'
 
 export const apiRouter = Router();
 
+apiRouter.use('/ops/:restaurantId',operationalRouter);
+apiRouter.use('/staff-invitations',generalLimiter,staffInvitationRouter);
 // Mount health and readiness checks
 apiRouter.use('/', healthRouter);
 

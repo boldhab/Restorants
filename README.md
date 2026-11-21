@@ -18,7 +18,7 @@ Visit http://localhost:3000. `setup:dev` preserves existing environment files. T
 
 With the default development memory email adapter, open http://localhost:3000/api/v1/dev/emails to inspect verification/reset links. This endpoint exists only with a nonproduction memory transport. Memory capture disappears when the process restarts. Alternatively set `EMAIL_PROVIDER=smtp`, `SMTP_HOST=127.0.0.1`, `SMTP_PORT=1025` and use Mailpit at http://localhost:8025.
 
-Development demo accounts: `owner1@example.com`, `owner2@example.com`, `staff@example.com`, `multitenant@example.com`, and `admin@example.com`. Their development-only password is `Password123!`. Only the explicitly seeded platform account has a separate platform assignment. Registration can never assign privileges. Seeds are repeatable and are refused outside development/test.
+Development demo accounts: `owner1@example.com` (Bella Italia), `owner2@example.com` (Tokyo Ramen), `owner3@example.com` (Le Petit Bistro), `owner4@example.com` (Taco Fiesta), `staff@example.com`, `staff3@example.com`, `staff4@example.com`, `multitenant@example.com`, and `admin@example.com`. Their development-only password is `Password123!`. Only the explicitly seeded platform account has a separate platform assignment. Registration can never assign privileges. Seeds are repeatable and are refused outside development/test.
 
 | Command                               | Purpose                                                         |
 | ------------------------------------- | --------------------------------------------------------------- |
@@ -57,3 +57,5 @@ Local abandoned-object cleanup: `npm run media:cleanup` is a dry run; add `-- --
 Phase 2 execution evidence and per-step status: [verification report](docs/phase-2-verification.md).
 
 Phase 3: [pickup commerce, reservations, worker operations and pilot boundaries](docs/phase-3.md), [transaction rules](docs/phase-3-rules.md), and [verification report](docs/phase-3-verification.md). Apply migrations before starting upgraded apps. Run `npm run worker` in a separate terminal. New ordering/reservations require both saved owner settings and a manually assigned platform entitlement; production online payment remains unconfigured.
+
+Phase 4: [daily operations setup and workflows](docs/phase-4.md), [operational rules](docs/phase-4-rules.md), [database relationships](docs/phase-4-relationships.md), and [verification report](docs/phase-4-verification.md). Apply migrations 007–013 before running the API/worker. Configure resources and enable individual features at `/operations/RESTAURANT_ID/settings`; existing restaurants retain disabled defaults. Optional local development seed: `SEED_RESTAURANT_ID=... SEED_OWNER_ID=... npm run db:seed:phase4`. No real prepaid delivery is enabled without a configured, verified payment provider.

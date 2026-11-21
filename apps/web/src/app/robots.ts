@@ -7,6 +7,10 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/r/',
       disallow: [
         '/workspace/',
+        '/operations/',
+        '/table/',
+        '/review/',
+        '/staff-invitation',
         '/shop/',
         '/platform',
         '/customer/',

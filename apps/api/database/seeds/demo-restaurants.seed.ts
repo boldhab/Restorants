@@ -38,7 +38,11 @@ export async function seedDemoRestaurants(client: import('pg').PoolClient) {
   // 1. Create Users
   const owner1Id = await upsertUser('owner1@example.com', 'Marco Bellini');
   const owner2Id = await upsertUser('owner2@example.com', 'Kenji Tanaka');
+  const owner3Id = await upsertUser('owner3@example.com', 'Antoine Dubois');
+  const owner4Id = await upsertUser('owner4@example.com', 'Carlos Mendoza');
   const staffId = await upsertUser('staff@example.com', 'Luca Rossi');
+  const staff3Id = await upsertUser('staff3@example.com', 'Camille Laurent');
+  const staff4Id = await upsertUser('staff4@example.com', 'Elena Gomez');
   const multiTenantId = await upsertUser('multitenant@example.com', 'Sarah Jenkins');
   const adminId = await upsertUser('admin@example.com', 'Platform Admin', true, true);
 
@@ -110,6 +114,32 @@ export async function seedDemoRestaurants(client: import('pg').PoolClient) {
     'America/Los_Angeles'
   );
 
+  const rest3Id = await upsertRestaurant(
+    'Le Petit Bistro',
+    'le-petit-bistro',
+    'French Bistro',
+    '+1 555-0303',
+    'contact@lepetitbistro.local',
+    'United States',
+    'Boston',
+    '78 Newbury St',
+    'USD',
+    'America/New_York'
+  );
+
+  const rest4Id = await upsertRestaurant(
+    'Taco Fiesta',
+    'taco-fiesta',
+    'Mexican Taqueria',
+    '+1 555-0404',
+    'contact@tacofiesta.local',
+    'United States',
+    'Austin',
+    '1024 S Congress Ave',
+    'USD',
+    'America/Chicago'
+  );
+
   // Helper to assign membership and role
   async function assignMembership(restaurantId: string, userId: string, roleId: string) {
     const mRes = await client.query(
@@ -144,4 +174,12 @@ export async function seedDemoRestaurants(client: import('pg').PoolClient) {
   // Multi-tenant -> Bella Italia (Manager) & Tokyo Ramen (Staff)
   await assignMembership(rest1Id, multiTenantId, managerRoleId);
   await assignMembership(rest2Id, multiTenantId, staffRoleId);
+
+  // Owner 3 & Staff 3 -> Le Petit Bistro
+  await assignMembership(rest3Id, owner3Id, ownerRoleId);
+  await assignMembership(rest3Id, staff3Id, staffRoleId);
+
+  // Owner 4 & Staff 4 -> Taco Fiesta
+  await assignMembership(rest4Id, owner4Id, ownerRoleId);
+  await assignMembership(rest4Id, staff4Id, staffRoleId);
 }

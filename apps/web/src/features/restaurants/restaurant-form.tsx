@@ -105,7 +105,7 @@ export function RestaurantForm({
         </p>
       )}
       {success && (
-        <p className="notice full" role="status">
+        <p className="notice success full" role="status">
           {success}
         </p>
       )}

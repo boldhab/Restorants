@@ -34,7 +34,7 @@ export function resolveTenant(paramName = 'restaurantId', allowResolution = fals
         LEFT JOIN roles ro ON mr.role_id = ro.id
         LEFT JOIN role_permissions rp ON ro.id = rp.role_id
         LEFT JOIN permissions p ON rp.permission_id = p.id
-        WHERE m.restaurant_id = $1 AND m.user_id = $2
+        WHERE m.restaurant_id = $1 AND m.user_id = $2 AND EXISTS(SELECT 1 FROM branch_access ba JOIN branches b ON b.id=ba.branch_id WHERE ba.membership_id=m.id AND ba.restaurant_id=m.restaurant_id AND b.is_default AND b.status='active')
         GROUP BY m.id, r.id
       `;
 
